@@ -204,7 +204,6 @@
         .unpaid-add-row {
             display: flex;
             gap: 8px;
-            flex-wrap: wrap;
             margin-bottom: 12px;
             align-items: center;
             background: rgba(255,255,255,0.15);
@@ -414,13 +413,29 @@
             .salary-info-value {
                 font-size: 1rem;
             }
+            /* 优化无薪工时添加行：手机不换行，紧凑排列 */
             .unpaid-add-row {
-                flex-direction: column;
-                align-items: stretch;
-                border-radius: 28px;
+                flex-wrap: nowrap;
+                padding: 6px 8px;
+                gap: 6px;
             }
-            .unpaid-add-row input, .unpaid-add-row button {
-                width: 100%;
+            .unpaid-add-row input[type="date"] {
+                flex: 2;
+                min-width: 0;
+                width: auto;
+                font-size: 0.75rem;
+                padding: 5px 4px;
+            }
+            .unpaid-add-row input[type="number"] {
+                width: 65px;
+                min-width: 55px;
+                font-size: 0.75rem;
+                padding: 5px 4px;
+            }
+            .unpaid-add-row button {
+                width: 44px;
+                padding: 5px 0;
+                font-size: 1rem;
             }
             .real-time-clock {
                 font-size: 1.5rem;
@@ -489,7 +504,6 @@
             💰 <strong>本日已賺取薪金</strong>    <span id="todayEarnings" style="font-size:1.6rem; font-weight:800;">$0.00</span>
         </div>
         
-        <!-- 薪金詳情摺疊區塊 -->
         <div style="display: flex; justify-content: flex-start; margin-top: 5px;">
             <button id="toggleSalaryBtn" class="toggle-salary-btn">📊 薪金詳情 ▼</button>
         </div>
@@ -638,7 +652,6 @@
     const realTimeClockSpan = document.getElementById('realTimeClock');
     const countdownSpan = document.getElementById('countdownToOff');
     
-    // 摺疊狀態控制，預設摺疊 (false = 摺疊)
     let salaryDetailsExpanded = false;
     function updateSalaryDetailsVisibility() {
         if (salaryDetailsExpanded) {
@@ -992,7 +1005,7 @@
         let html = '<table class="calendar-table"><thead><tr>';
         const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
         weekdays.forEach(d => html += `<th>${d}</th>`);
-        html += '<tr></thead><tbody>';
+        html += '</tr></thead><tbody>';
         let date = 1;
         for (let i = 0; i < 6; i++) {
             html += '<tr>';
@@ -1016,7 +1029,7 @@
             html += '</tr>';
             if (date > daysInMonth) break;
         }
-        html += '</tbody></table>';
+        html += '</tbody></tr>';
         calendarDiv.innerHTML = html;
         document.querySelectorAll('.work-checkbox').forEach(cb => {
             cb.addEventListener('change', (e) => {
@@ -1213,7 +1226,6 @@
             realTimeArea.style.display = "none";
         }
         
-        // 薪金詳情預設為摺疊
         salaryDetailsExpanded = false;
         updateSalaryDetailsVisibility();
         
