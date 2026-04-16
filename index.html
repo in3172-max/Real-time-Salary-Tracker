@@ -14,58 +14,61 @@
             margin: 0;
             padding: 0;
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
         }
         .app-container {
             width: 100%;
             background: transparent;
-            overflow: hidden;
         }
         .settings-panel {
             background: #ffffff;
             border-bottom: 1px solid #e9edf2;
-            padding: 24px 28px;
+            padding: 16px 20px;
             transition: all 0.35s ease;
             max-height: 2500px;
             overflow-y: auto;
         }
         .settings-panel.collapsed {
             max-height: 0;
-            padding: 0 28px;
+            padding: 0 20px;
             border-bottom: none;
             overflow: hidden;
         }
         .real-time-area {
-            padding: 28px 32px;
+            padding: 20px 16px;
             background: linear-gradient(135deg, #0f2c3b 0%, #1b4f6e 100%);
             color: white;
         }
         .section-title {
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             font-weight: 700;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             color: #1f3e53;
             border-left: 5px solid #f5b042;
-            padding-left: 16px;
+            padding-left: 12px;
         }
         .calendar-header {
             display: flex;
-            gap: 20px;
+            gap: 12px;
             align-items: center;
             flex-wrap: wrap;
             background: #f8fafc;
-            padding: 14px 20px;
+            padding: 12px 16px;
             border-radius: 40px;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
+        }
+        .month-picker {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
         }
         .month-picker select, input, button {
-            padding: 8px 16px;
+            padding: 6px 12px;
             border-radius: 48px;
             border: 1px solid #cbd5e1;
             background: white;
             font-weight: 500;
+            font-size: 0.9rem;
         }
         button {
             background: #1f4e6e;
@@ -82,60 +85,68 @@
         }
         .work-hours-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 16px;
-            margin: 24px 0;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 12px;
+            margin: 20px 0;
         }
         .day-card {
             background: #fff8ed;
-            border-radius: 28px;
-            padding: 12px 16px;
+            border-radius: 24px;
+            padding: 10px 12px;
             border: 1px solid #ffdfb0;
         }
         .day-name {
             font-weight: 800;
-            font-size: 1.1rem;
-            margin-bottom: 10px;
+            font-size: 1rem;
+            margin-bottom: 8px;
             color: #b45f1b;
         }
         .time-row {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 6px;
             align-items: center;
-            margin: 10px 0;
+            margin: 8px 0;
         }
         .time-row label {
-            width: 75px;
-            font-size: 0.75rem;
+            width: 70px;
+            font-size: 0.7rem;
             font-weight: 600;
         }
         input[type="time"], input[type="number"] {
-            width: 115px;
+            width: 100px;
+            padding: 4px 8px;
+            font-size: 0.8rem;
         }
         .monthly-salary {
             background: #eef3fc;
-            padding: 18px;
-            border-radius: 32px;
-            margin: 20px 0;
+            padding: 14px;
+            border-radius: 28px;
+            margin: 16px 0;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
         }
         .calendar-wrapper {
             overflow-x: auto;
-            margin: 16px 0;
+            margin: 12px 0;
         }
         .calendar-table {
             width: 100%;
             border-collapse: collapse;
             background: white;
-            border-radius: 28px;
+            border-radius: 20px;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            min-width: 600px;
         }
         .calendar-table th, .calendar-table td {
             border: 1px solid #e2e8f0;
-            padding: 12px 6px;
+            padding: 8px 4px;
             text-align: center;
             vertical-align: middle;
+            font-size: 0.8rem;
         }
         .date-num {
             font-weight: 700;
@@ -148,27 +159,27 @@
             font-weight: bold;
         }
         .real-time-number {
-            font-size: 3rem;
+            font-size: 2.2rem;
             font-weight: 800;
             font-family: monospace;
             background: #00000030;
             display: inline-block;
-            padding: 10px 30px;
+            padding: 6px 20px;
             border-radius: 60px;
-            margin: 12px 0;
-            letter-spacing: 2px;
+            margin: 10px 0;
+            letter-spacing: 1px;
         }
         .daily-earnings {
             background: #f5a62320;
             border-left: 5px solid #f5a623;
-            padding: 12px 18px;
-            border-radius: 28px;
-            margin: 15px 0;
+            padding: 10px 14px;
+            border-radius: 24px;
+            margin: 12px 0;
         }
         .flex-btns {
             display: flex;
-            gap: 15px;
-            margin-top: 20px;
+            gap: 12px;
+            margin-top: 16px;
             flex-wrap: wrap;
         }
         .outline-btn {
@@ -177,10 +188,10 @@
             border: 2px solid #1f4e6e;
         }
         .unpaid-section {
-            margin-top: 25px;
+            margin-top: 20px;
             background: rgba(0,0,0,0.25);
-            border-radius: 28px;
-            padding: 16px 20px;
+            border-radius: 24px;
+            padding: 12px 16px;
             backdrop-filter: blur(4px);
         }
         .unpaid-header {
@@ -188,68 +199,69 @@
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
         }
         .unpaid-add-row {
             display: flex;
-            gap: 12px;
+            gap: 8px;
             flex-wrap: wrap;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
             align-items: center;
             background: rgba(255,255,255,0.15);
-            padding: 12px;
-            border-radius: 60px;
+            padding: 10px;
+            border-radius: 50px;
         }
         .unpaid-add-row input, .unpaid-add-row button {
             margin: 0;
             background: white;
             color: #1e2f3a;
+            font-size: 0.8rem;
         }
         .unpaid-list {
-            max-height: 200px;
+            max-height: 180px;
             overflow-y: auto;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
         }
         .unpaid-item {
             background: #ffffff20;
-            margin: 6px 0;
-            padding: 6px 12px;
-            border-radius: 40px;
+            margin: 5px 0;
+            padding: 6px 10px;
+            border-radius: 30px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 6px;
         }
         .unpaid-actions {
             display: flex;
-            gap: 8px;
+            gap: 6px;
         }
         .edit-unpaid, .delete-unpaid {
             background: transparent;
             border: none;
             cursor: pointer;
-            font-size: 1.2rem;
-            padding: 4px 8px;
+            font-size: 1rem;
+            padding: 2px 6px;
             border-radius: 30px;
             transition: 0.2s;
         }
-        .edit-unpaid:hover, .delete-unpaid:hover {
-            background: rgba(255,255,255,0.3);
-        }
         .inline-edit {
             display: flex;
-            gap: 8px;
+            gap: 6px;
             align-items: center;
             background: rgba(0,0,0,0.5);
             padding: 4px 8px;
             border-radius: 40px;
+            flex-wrap: wrap;
         }
         .inline-edit input {
             width: 100px;
             padding: 4px;
             border-radius: 20px;
             border: none;
+            font-size: 0.8rem;
         }
         .error-msg {
             color: #ffb347;
@@ -259,56 +271,56 @@
         }
         .salary-info-grid {
             display: flex;
-            gap: 20px;
+            gap: 12px;
             flex-wrap: wrap;
-            margin: 20px 0 10px;
+            margin: 16px 0 10px;
             background: rgba(0,0,0,0.2);
-            border-radius: 32px;
-            padding: 16px 20px;
+            border-radius: 28px;
+            padding: 12px 16px;
             justify-content: space-between;
         }
         .salary-info-card {
             text-align: center;
             flex: 1;
-            min-width: 80px;
+            min-width: 70px;
         }
         .salary-info-label {
-            font-size: 0.8rem;
+            font-size: 0.7rem;
             opacity: 0.8;
         }
         .salary-info-value {
-            font-size: 1.5rem;
+            font-size: 1.2rem;
             font-weight: 800;
         }
         .clock-container {
             text-align: center;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
         .clock-label {
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             opacity: 0.8;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
         .real-time-clock {
-            font-size: 2rem;
+            font-size: 1.5rem;
             font-weight: 700;
             font-family: monospace;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
             background: rgba(0,0,0,0.3);
             display: inline-block;
-            padding: 6px 20px;
-            border-radius: 60px;
+            padding: 4px 16px;
+            border-radius: 50px;
         }
         .countdown-timer {
-            font-size: 0.95rem;
-            margin-top: 6px;
+            font-size: 0.85rem;
+            margin-top: 5px;
             opacity: 0.9;
         }
         .coffee-link {
             text-align: center;
-            margin-top: 20px;
-            padding: 12px;
-            font-size: 0.9rem;
+            margin-top: 16px;
+            padding: 10px;
+            font-size: 0.85rem;
             border-top: 1px solid rgba(255,255,255,0.2);
         }
         .coffee-link a {
@@ -316,14 +328,85 @@
             text-decoration: none;
             font-weight: bold;
         }
-        .coffee-link a:hover {
-            text-decoration: underline;
-        }
-        @media (max-width: 720px) {
-            .settings-panel { padding: 16px; }
-            .real-time-number { font-size: 2rem; }
-            .salary-info-value { font-size: 1.1rem; }
-            .real-time-clock { font-size: 1.3rem; }
+        /* 手机专用优化 */
+        @media (max-width: 640px) {
+            .settings-panel {
+                padding: 12px 16px;
+            }
+            .real-time-area {
+                padding: 16px 12px;
+            }
+            .section-title {
+                font-size: 1.2rem;
+            }
+            .calendar-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+            .month-picker {
+                justify-content: center;
+            }
+            .work-hours-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            .day-card {
+                padding: 8px 10px;
+            }
+            .time-row {
+                flex-wrap: wrap;
+            }
+            .time-row label {
+                width: 65px;
+            }
+            .monthly-salary {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .flex-btns {
+                flex-direction: column;
+            }
+            .flex-btns button {
+                width: 100%;
+            }
+            .real-time-number {
+                font-size: 1.8rem;
+                padding: 4px 12px;
+            }
+            .daily-earnings {
+                font-size: 0.9rem;
+            }
+            .daily-earnings span {
+                font-size: 1.4rem !important;
+            }
+            .salary-info-value {
+                font-size: 1rem;
+            }
+            .unpaid-add-row {
+                flex-direction: column;
+                align-items: stretch;
+                border-radius: 28px;
+            }
+            .unpaid-add-row input, .unpaid-add-row button {
+                width: 100%;
+            }
+            .real-time-clock {
+                font-size: 1.3rem;
+            }
+            .countdown-timer {
+                font-size: 0.75rem;
+            }
+            .coffee-link {
+                font-size: 0.75rem;
+            }
+            .calendar-table th, .calendar-table td {
+                padding: 6px 2px;
+                font-size: 0.7rem;
+            }
+            .calendar-table input[type="checkbox"] {
+                transform: scale(1);
+            }
         }
     </style>
 </head>
@@ -338,17 +421,17 @@
                 <label>月份：</label>
                 <select id="monthSelect"></select>
             </div>
-            <div style="display: flex; gap: 10px; align-items: center;">
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                 <div style="font-size:0.75rem;">✅ 勾選上班日</div>
-                <button id="toggleSaturdayBtn" style="background:#f5a623; color:#1e2f3a; padding:6px 12px;">一鍵勾選/反勾選星期六</button>
+                <button id="toggleSaturdayBtn" style="background:#f5a623; color:#1e2f3a; padding:4px 10px;">一鍵勾選/反勾選星期六</button>
             </div>
         </div>
         <div class="calendar-wrapper" id="calendarPreview"></div>
-        <div style="font-weight:700; margin: 16px 0 8px;">⏰ 每日時段設定</div>
+        <div style="font-weight:700; margin: 12px 0 8px;">⏰ 每日時段設定</div>
         <div class="work-hours-grid" id="weekdayConfigContainer"></div>
         <div class="monthly-salary">
             <label style="font-weight:700;">💰 月薪 (HKD) : </label>
-            <input type="number" id="monthlySalary" value="20000" step="500" style="width:180px;">
+            <input type="number" id="monthlySalary" value="20000" step="500" style="width:160px;">
         </div>
         <div class="flex-btns">
             <button id="finishSetupBtn">✅ 完成設定</button>
@@ -362,13 +445,13 @@
             <div class="real-time-clock" id="realTimeClock">--:--:--</div>
             <div class="countdown-timer" id="countdownToOff">計算中...</div>
         </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-            <div><span style="font-size:1.3rem; font-weight:600;">💰 本月已賺取薪金</span></div>
-            <button id="openSettingsBtn" style="background:#f5a623; color:#1e2f3a; font-size:1.4rem; padding:4px 12px;">⚙️</button>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <div><span style="font-size:1.2rem; font-weight:600;">💰 本月已賺取薪金</span></div>
+            <button id="openSettingsBtn" style="background:#f5a623; color:#1e2f3a; font-size:1.2rem; padding:4px 10px;">⚙️</button>
         </div>
         <div class="real-time-number" id="runningEarnings">$0.00</div>
         <div class="daily-earnings">
-            💰 <strong>本日已賺取薪金</strong>    <span id="todayEarnings" style="font-size:1.8rem; font-weight:800;">$0.00</span>
+            💰 <strong>本日已賺取薪金</strong>    <span id="todayEarnings" style="font-size:1.6rem; font-weight:800;">$0.00</span>
         </div>
         <div class="salary-info-grid">
             <div class="salary-info-card">
@@ -388,26 +471,26 @@
                 <div class="salary-info-value" id="displayHourlyRate">0</div>
             </div>
         </div>
-        <div class="sub-info" id="rateInfo"></div>
-        <div id="timeProgressInfo" style="font-size:0.85rem; margin-top: 5px;"></div>
+        <div class="sub-info" id="rateInfo" style="font-size:0.8rem;"></div>
+        <div id="timeProgressInfo" style="font-size:0.75rem; margin-top: 5px;"></div>
         <hr style="border-color:#ffffff40;">
         <div class="unpaid-section">
             <div class="unpaid-header">
                 <strong>📝 額外無薪工時 (增加總工時 → 降低時薪)</strong>
             </div>
             <div class="unpaid-add-row">
-                <input type="date" id="unpaidDateInput" style="flex:1; min-width:140px;">
+                <input type="date" id="unpaidDateInput" style="flex:1; min-width:130px;">
                 <input type="number" id="unpaidHoursInput" placeholder="時數" step="0.5" min="0" value="1" style="width:80px;">
-                <button id="addUnpaidBtnInline" style="font-size:1.2rem;">➕</button>
+                <button id="addUnpaidBtnInline" style="font-size:1rem;">➕</button>
             </div>
             <div id="unpaidErrorMsg" class="error-msg" style="display:none;"></div>
             <div id="unpaidListContainer" class="unpaid-list">
-                <div style="opacity:0.7; font-size:0.8rem;">暫無記錄，新增上方日期及時數</div>
+                <div style="opacity:0.7; font-size:0.75rem;">暫無記錄，新增上方日期及時數</div>
             </div>
-            <div id="unpaidStats" style="margin-top: 12px; font-size:0.85rem; background:#00000030; border-radius: 20px; padding: 8px 12px;">
+            <div id="unpaidStats" style="margin-top: 10px; font-size:0.75rem; background:#00000030; border-radius: 20px; padding: 6px 10px;">
                 累計無薪工時(本月): 0.00 小時
             </div>
-            <div id="unpaidOriginalWorth" style="margin-top: 8px; font-size:0.85rem; background:#00000030; border-radius: 20px; padding: 8px 12px;">
+            <div id="unpaidOriginalWorth" style="margin-top: 8px; font-size:0.75rem; background:#00000030; border-radius: 20px; padding: 6px 10px;">
                 若按基本時薪計算: $0.00
             </div>
         </div>
@@ -839,7 +922,7 @@
         let html = '<table class="calendar-table"><thead><tr>';
         const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
         weekdays.forEach(d => html += `<th>${d}</th>`);
-        html += '</tr></thead><tbody>';
+        html += '<tr></thead><tbody>';
         let date = 1;
         for (let i = 0; i < 6; i++) {
             html += '<tr>';
@@ -855,7 +938,7 @@
                     const checkedAttr = working ? 'checked' : '';
                     html += `<td class="${isToday ? 'today-badge' : ''}">
                                 <div><span class="date-num">${date}</span></div>
-                                <div><input type="checkbox" class="work-checkbox" data-year="${year}" data-month="${month}" data-day="${date}" ${checkedAttr} style="transform:scale(1.2);"></div>
+                                <div><input type="checkbox" class="work-checkbox" data-year="${year}" data-month="${month}" data-day="${date}" ${checkedAttr} style="transform:scale(1.1);"></div>
                               </td>`;
                     date++;
                 }
@@ -959,7 +1042,7 @@
     function renderUnpaidList() {
         if(!unpaidListContainer) return;
         if(unpaidRecords.length === 0) {
-            unpaidListContainer.innerHTML = '<div style="opacity:0.7; font-size:0.8rem;">暫無記錄，新增上方日期及時數</div>';
+            unpaidListContainer.innerHTML = '<div style="opacity:0.7; font-size:0.75rem;">暫無記錄，新增上方日期及時數</div>';
         } else {
             let html = '';
             unpaidRecords.forEach((rec, idx) => {
@@ -967,8 +1050,8 @@
                     <div class="unpaid-item" data-idx="${idx}">
                         <span>📅 ${rec.dateStr} &nbsp; ⏱️ ${rec.hours.toFixed(2)} 小時</span>
                         <div class="unpaid-actions">
-                            <button class="edit-unpaid" data-idx="${idx}" style="font-size:1.1rem;">✏️</button>
-                            <button class="delete-unpaid" data-idx="${idx}" style="font-size:1.1rem;">➖</button>
+                            <button class="edit-unpaid" data-idx="${idx}" style="font-size:1rem;">✏️</button>
+                            <button class="delete-unpaid" data-idx="${idx}" style="font-size:1rem;">➖</button>
                         </div>
                     </div>
                 `;
