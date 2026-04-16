@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>動態實時工薪追蹤器 (By Ivan N)</title>
-    <!-- 設定圖標為 💰 -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E💰%3C/text%3E%3C/svg%3E">
+    <title>實時薪金追蹤器 (By Ivan N)</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext x='50%25' y='50%25' font-size='80' text-anchor='middle' dy='.35em' fill='%23f5a623'%3E💰%3C/text%3E%3C/svg%3E">
     <style>
         * {
             box-sizing: border-box;
@@ -63,7 +62,7 @@
             gap: 8px;
             align-items: center;
         }
-        .month-picker select {
+        .month-picker select, input, button {
             padding: 6px 12px;
             border-radius: 48px;
             border: 1px solid #cbd5e1;
@@ -78,9 +77,6 @@
             cursor: pointer;
             transition: 0.2s;
             font-weight: 600;
-            padding: 6px 12px;
-            border-radius: 48px;
-            font-size: 0.9rem;
         }
         button:hover {
             background: #f5a623;
@@ -113,7 +109,7 @@
             margin: 8px 0;
         }
         .time-row label {
-            width: 70px;
+            width: 85px;
             font-size: 0.7rem;
             font-weight: 600;
         }
@@ -121,8 +117,6 @@
             width: 100px;
             padding: 4px 8px;
             font-size: 0.8rem;
-            border-radius: 48px;
-            border: 1px solid #cbd5e1;
         }
         .monthly-salary {
             background: #eef3fc;
@@ -145,14 +139,13 @@
             border-radius: 20px;
             overflow: hidden;
             box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-            min-width: 600px;
         }
         .calendar-table th, .calendar-table td {
             border: 1px solid #e2e8f0;
             padding: 8px 4px;
             text-align: center;
             vertical-align: middle;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
         }
         .date-num {
             font-weight: 700;
@@ -207,7 +200,6 @@
             flex-wrap: wrap;
             margin-bottom: 10px;
             font-size: 0.9rem;
-            line-height: 1.3;
         }
         .unpaid-add-row {
             display: flex;
@@ -294,40 +286,53 @@
         .salary-info-label {
             font-size: 0.7rem;
             opacity: 0.8;
-            line-height: 1.2;
         }
         .salary-info-value {
             font-size: 1.2rem;
             font-weight: 800;
         }
-        .top-bar {
+        .top-settings {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-            flex-wrap: wrap;
-            gap: 8px;
+            justify-content: flex-end;
+            margin-bottom: 8px;
+        }
+        .gear-btn {
+            background: transparent !important;
+            color: #f5a623 !important;
+            font-size: 2rem !important;
+            padding: 0 !important;
+            margin: 0;
+            width: auto;
+            border: none;
+            box-shadow: none;
+        }
+        .gear-btn:hover {
+            background: transparent !important;
+            transform: scale(1.1);
+            color: #ffcc66 !important;
         }
         .clock-container {
-            text-align: left;
+            text-align: center;
+            margin-bottom: 12px;
         }
         .clock-label {
-            font-size: 0.8rem;
-            opacity: 0.8;
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 4px;
         }
         .real-time-clock {
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             font-weight: 700;
             font-family: monospace;
-            letter-spacing: 1px;
+            letter-spacing: 2px;
             background: rgba(0,0,0,0.3);
             display: inline-block;
-            padding: 4px 16px;
-            border-radius: 50px;
+            padding: 6px 20px;
+            border-radius: 60px;
         }
         .countdown-timer {
-            font-size: 0.85rem;
-            margin-top: 5px;
+            font-size: 0.9rem;
+            margin-top: 6px;
             opacity: 0.9;
         }
         .coffee-link {
@@ -342,11 +347,18 @@
             text-decoration: none;
             font-weight: bold;
         }
-        /* 强制换行 */
-        .two-lines {
-            display: inline-block;
-            max-width: 80px;
-            line-height: 1.2;
+        .toggle-salary-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 4px 12px;
+            font-size: 0.85rem;
+            border-radius: 30px;
+            margin: 8px 0 0 0;
+            width: auto;
+        }
+        .toggle-salary-btn:hover {
+            background: rgba(255,255,255,0.3);
         }
         @media (max-width: 640px) {
             .settings-panel {
@@ -377,7 +389,7 @@
                 flex-wrap: wrap;
             }
             .time-row label {
-                width: 65px;
+                width: 85px;
             }
             .monthly-salary {
                 flex-direction: column;
@@ -411,28 +423,23 @@
                 width: 100%;
             }
             .real-time-clock {
-                font-size: 1.3rem;
+                font-size: 1.5rem;
             }
             .countdown-timer {
-                font-size: 0.75rem;
+                font-size: 0.8rem;
             }
             .coffee-link {
                 font-size: 0.75rem;
             }
             .calendar-table th, .calendar-table td {
-                padding: 6px 2px;
+                padding: 4px 2px;
                 font-size: 0.7rem;
             }
             .calendar-table input[type="checkbox"] {
-                transform: scale(1);
+                transform: scale(0.9);
             }
-            .top-bar {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            .clock-container {
-                width: 100%;
-                text-align: center;
+            .gear-btn {
+                font-size: 1.8rem !important;
             }
         }
     </style>
@@ -443,12 +450,13 @@
         <div class="section-title">⚙️ 設定</div>
         <div class="calendar-header">
             <div class="month-picker">
-                📅 <select id="yearSelect"></select>
+                <span>📅</span>
+                <select id="yearSelect"></select>
                 <select id="monthSelect"></select>
             </div>
             <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                <div style="font-size:0.75rem;">✅ 勾選上班日</div>
-                <button id="toggleSaturdayBtn" style="background:#f5a623; color:#1e2f3a; padding:4px 10px;">一鍵勾選/反勾選星期六</button>
+                <div style="font-size:0.75rem;">請勾選上班日</div>
+                <button id="toggleSaturdayBtn" style="background:#f5a623; color:#1e2f3a; padding:4px 10px;">一鍵勾選/反選星期六</button>
             </div>
         </div>
         <div class="calendar-wrapper" id="calendarPreview"></div>
@@ -456,7 +464,7 @@
         <div class="work-hours-grid" id="weekdayConfigContainer"></div>
         <div class="monthly-salary">
             <label style="font-weight:700;">💰 月薪 : </label>
-            <input type="number" id="monthlySalary" value="20000" step="500" style="width:160px;">
+            <input type="number" id="monthlySalary" value="20000" step="any" style="width:160px;">
         </div>
         <div class="flex-btns">
             <button id="finishSetupBtn">✅ 完成設定</button>
@@ -465,43 +473,53 @@
     </div>
 
     <div id="realTimeArea" class="real-time-area" style="display: none;">
-        <div class="top-bar">
-            <div class="clock-container">
-                <div class="clock-label">🕒 現在時間</div>
-                <div class="real-time-clock" id="realTimeClock">--:--:--</div>
-                <div class="countdown-timer" id="countdownToOff">計算中...</div>
-            </div>
-            <button id="openSettingsBtn" style="background:#f5a623; color:#1e2f3a; font-size:1.2rem; padding:4px 10px;">⚙️</button>
+        <div class="top-settings">
+            <button id="openSettingsBtn" class="gear-btn">⚙️</button>
         </div>
-        <div style="margin-bottom: 8px;"><span style="font-size:1.2rem; font-weight:600;">💰 本月已賺取薪金</span></div>
+        <div class="clock-container">
+            <div class="clock-label">🕒 現在時間</div>
+            <div class="real-time-clock" id="realTimeClock">--:--:--</div>
+            <div class="countdown-timer" id="countdownToOff">計算中...</div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+            <div><span style="font-size:1.2rem; font-weight:600;">💰 本月已賺取薪金</span></div>
+        </div>
         <div class="real-time-number" id="runningEarnings">$0.00</div>
         <div class="daily-earnings">
             💰 <strong>本日已賺取薪金</strong>    <span id="todayEarnings" style="font-size:1.6rem; font-weight:800;">$0.00</span>
         </div>
-        <div class="salary-info-grid">
-            <div class="salary-info-card">
-                <div class="salary-info-label">💰 月薪</div>
-                <div class="salary-info-value" id="displayMonthlySalary">0</div>
-            </div>
-            <div class="salary-info-card">
-                <div class="salary-info-label">💰 日薪</div>
-                <div class="salary-info-value" id="displayDailyRate">0</div>
-            </div>
-            <div class="salary-info-card">
-                <div class="salary-info-label">⏱️ 基本時薪</div>
-                <div class="salary-info-value" id="displayOriginalHourlyRate">0</div>
-            </div>
-            <div class="salary-info-card">
-                <div class="salary-info-label"><span class="two-lines">實際時薪<br>(加算無薪工時後)</span></div>
-                <div class="salary-info-value" id="displayHourlyRate">0</div>
+        
+        <!-- 薪金詳情摺疊區塊 -->
+        <div style="display: flex; justify-content: flex-start; margin-top: 5px;">
+            <button id="toggleSalaryBtn" class="toggle-salary-btn">📊 薪金詳情 ▼</button>
+        </div>
+        <div id="salaryDetailsContainer" style="display: none;">
+            <div class="salary-info-grid">
+                <div class="salary-info-card">
+                    <div class="salary-info-label">💰 月薪</div>
+                    <div class="salary-info-value" id="displayMonthlySalary">0</div>
+                </div>
+                <div class="salary-info-card">
+                    <div class="salary-info-label">💰 本日薪金</div>
+                    <div class="salary-info-value" id="displayDailyRate">0</div>
+                </div>
+                <div class="salary-info-card">
+                    <div class="salary-info-label">⏱️ 基本時薪</div>
+                    <div class="salary-info-value" id="displayOriginalHourlyRate">0</div>
+                </div>
+                <div class="salary-info-card">
+                    <div class="salary-info-label">⏱️ 實際時薪(加算無薪工時後)</div>
+                    <div class="salary-info-value" id="displayHourlyRate">0</div>
+                </div>
             </div>
         </div>
+        
         <div class="sub-info" id="rateInfo" style="font-size:0.8rem;"></div>
         <div id="timeProgressInfo" style="font-size:0.75rem; margin-top: 5px;"></div>
         <hr style="border-color:#ffffff40;">
         <div class="unpaid-section">
             <div class="unpaid-header">
-                <strong><span class="two-lines">額外無薪工時<br>(增加總工時 → 降低時薪)</span></strong>
+                <strong>📝 額外無薪工時</strong>
             </div>
             <div class="unpaid-add-row">
                 <input type="date" id="unpaidDateInput" style="flex:1; min-width:130px;">
@@ -513,7 +531,7 @@
                 <div style="opacity:0.7; font-size:0.75rem;">暫無記錄，新增上方日期及時數</div>
             </div>
             <div id="unpaidStats" style="margin-top: 10px; font-size:0.75rem; background:#00000030; border-radius: 20px; padding: 6px 10px;">
-                累計無薪工時(本月): 0.00 小時
+                本月無薪工時: 0.00 小時
             </div>
             <div id="unpaidOriginalWorth" style="margin-top: 8px; font-size:0.75rem; background:#00000030; border-radius: 20px; padding: 6px 10px;">
                 若按基本時薪計算: $0.00
@@ -600,6 +618,8 @@
     const resetDailyBtn = document.getElementById('resetDailyBtn');
     const openSettingsBtn = document.getElementById('openSettingsBtn');
     const toggleSaturdayBtn = document.getElementById('toggleSaturdayBtn');
+    const toggleSalaryBtn = document.getElementById('toggleSalaryBtn');
+    const salaryDetailsContainer = document.getElementById('salaryDetailsContainer');
     const runningSpan = document.getElementById('runningEarnings');
     const todayEarningsSpan = document.getElementById('todayEarnings');
     const rateInfoDiv = document.getElementById('rateInfo');
@@ -617,6 +637,30 @@
     const displayOriginalHourlyRateSpan = document.getElementById('displayOriginalHourlyRate');
     const realTimeClockSpan = document.getElementById('realTimeClock');
     const countdownSpan = document.getElementById('countdownToOff');
+    
+    // 摺疊狀態控制，預設摺疊 (false = 摺疊)
+    let salaryDetailsExpanded = false;
+    function updateSalaryDetailsVisibility() {
+        if (salaryDetailsExpanded) {
+            salaryDetailsContainer.style.display = 'block';
+            toggleSalaryBtn.innerHTML = '📊 薪金詳情 ▼';
+        } else {
+            salaryDetailsContainer.style.display = 'none';
+            toggleSalaryBtn.innerHTML = '📊 薪金詳情 ▶';
+        }
+    }
+    function toggleSalaryDetails() {
+        salaryDetailsExpanded = !salaryDetailsExpanded;
+        updateSalaryDetailsVisibility();
+    }
+    
+    function formatSalary(value) {
+        if (value === undefined || value === null) return "0";
+        let num = parseFloat(value);
+        if (isNaN(num)) return "0";
+        if (Number.isInteger(num)) return num.toString();
+        return parseFloat(num.toFixed(2)).toString();
+    }
     
     function saveState() {
         const overrideObj = {};
@@ -758,8 +802,7 @@
         
         if(realTimeEnabled) {
             rateInfoDiv.innerHTML = `📆 本月工時(含無薪): ${totalWorkHoursWithUnpaid.toFixed(2)} 小時 | 基本工時 ${originalTotalWorkHours.toFixed(2)} 小時`;
-            displayMonthlySalarySpan.innerText = `$${monthlySalaryHKD.toFixed(0)}`;
-            displayDailyRateSpan.innerText = `$${computedDailyAvg.toFixed(2)}`;
+            displayMonthlySalarySpan.innerText = `$${formatSalary(monthlySalaryHKD)}`;
             displayOriginalHourlyRateSpan.innerText = `$${originalHourlyRate.toFixed(2)}`;
             displayHourlyRateSpan.innerText = `$${computedHourlyRate.toFixed(2)}`;
         }
@@ -826,7 +869,7 @@
         const nowTimestamp = now.getTime();
         const diffMs = endTimestamp - nowTimestamp;
         if (diffMs <= 0) {
-            countdownSpan.innerText = "✅ 已下班";
+            countdownSpan.innerText = "✅ 已到達下班時間";
         } else {
             const diffMinutes = Math.floor(diffMs / 60000);
             const hoursRemain = Math.floor(diffMinutes / 60);
@@ -847,6 +890,8 @@
         const { monthTotal, todayTotal } = getAccumulatedAndTodayEarnings(now, realCurrentYear, realCurrentMonth, computedHourlyRate);
         runningSpan.innerText = `$${monthTotal.toFixed(2)}`;
         todayEarningsSpan.innerText = `$${todayTotal.toFixed(2)}`;
+        if (displayDailyRateSpan) displayDailyRateSpan.innerText = `$${todayTotal.toFixed(2)}`;
+        
         const totalDays = new Date(realCurrentYear, realCurrentMonth+1, 0).getDate();
         const totalSecInMonth = totalDays * 86400;
         const nowSec = (now - new Date(realCurrentYear, realCurrentMonth,1)) / 1000;
@@ -1108,7 +1153,7 @@
     function updateUnpaidStatsDisplay() {
         if(!unpaidStatsSpan) return;
         const unpaidThisMonth = getUnpaidHoursInMonth(realCurrentYear, realCurrentMonth);
-        unpaidStatsSpan.innerHTML = `累計無薪工時(本月): ${unpaidThisMonth.toFixed(2)} 小時`;
+        unpaidStatsSpan.innerHTML = `本月無薪工時: ${unpaidThisMonth.toFixed(2)} 小時`;
         let originalHourlyForWorth = 0;
         if(originalTotalWorkHours > 0 && monthlySalaryHKD > 0) {
             originalHourlyForWorth = monthlySalaryHKD / originalTotalWorkHours;
@@ -1168,10 +1213,15 @@
             realTimeArea.style.display = "none";
         }
         
+        // 薪金詳情預設為摺疊
+        salaryDetailsExpanded = false;
+        updateSalaryDetailsVisibility();
+        
         finishBtn.addEventListener('click', finishSetup);
         resetDailyBtn.addEventListener('click', resetAll);
         openSettingsBtn.addEventListener('click', openSettings);
         toggleSaturdayBtn.addEventListener('click', toggleSaturday);
+        toggleSalaryBtn.addEventListener('click', toggleSalaryDetails);
         yearSelect.addEventListener('change', updateCalendarFromPicker);
         monthSelect.addEventListener('change', updateCalendarFromPicker);
         if(addUnpaidBtnInline) addUnpaidBtnInline.addEventListener('click', addUnpaidRecord);
