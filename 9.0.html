@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>實時薪金追蹤器 (By Ivan N)</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext x='50%25' y='50%25' font-size='80' text-anchor='middle' dy='.35em' fill='%23f5a623'%3E💰%3C/text%3E%3C/svg%3E">
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, 'Segoe UI', 'Noto Sans', sans-serif;
+        }
+        body {
+            background: #eef2f7;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        .app-container {
+            width: 100%;
+            background: transparent;
+        }
+        .settings-panel {
+            background: #ffffff;
+            border-bottom: 1px solid #e9edf2;
+            padding: 16px 20px;
+            transition: all 0.35s ease;
+            max-height: 2500px;
+            overflow-y: auto;
+        }
+        .settings-panel.collapsed {
+            max-height: 0;
+            padding: 0 20px;
+            border-bottom: none;
+            overflow: hidden;
+        }
+        .real-time-area {
+            padding: 20px 16px;
+            background: linear-gradient(135deg, #0f2c3b 0%, #1b4f6e 100%);
+            color: white;
+        }
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #1f3e53;
+            border-left: 5px solid #f5b042;
+            padding-left: 12px;
+        }
+        .calendar-header {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            background: #f8fafc;
+            padding: 12px 16px;
+            border-radius: 40px;
+            margin-bottom: 20px;
+        }
+        .month-picker {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .month-picker select, input, button {
+            padding: 6px 12px;
+            border-radius: 48px;
+            border: 1px solid #cbd5e1;
+            background: white;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        button {
+            background: #1f4e6e;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s;
+            font-weight: 600;
+        }
+        button:hover {
+            background: #f5a623;
+            color: #1e2f3a;
+            transform: scale(0.96);
+        }
+        .work-hours-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 12px;
+            margin: 20px 0;
+        }
+        .day-card {
+            background: #fff8ed;
+            border-radius: 24px;
+            padding: 10px 12px;
+            border: 1px solid #ffdfb0;
+        }
+        .day-name {
+            font-weight: 800;
+            font-size: 1rem;
+            margin-bottom: 8px;
+            color: #b45f1b;
+        }
+        .time-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+            margin: 8px 0;
+        }
+        .time-row label {
+            width: 85px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        input[type="time"], input[type="number"] {
+            width: 100px;
+            padding: 4px 8px;
+            font-size: 0.8rem;
+        }
+        .monthly-salary {
+            background: #eef3fc;
+            padding: 14px;
+            border-radius: 28px;
+            margin: 16px 0;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+        }
+        .calendar-wrapper {
+            overflow-x: auto;
+            margin: 12px 0;
+        }
+        /* 修复日历错位 */
+        .calendar-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            table-layout: fixed;
+            min-width: 500px;
+        }
+        .calendar-table th, .calendar-table td {
+            border: 1px solid #e2e8f0;
+            padding: 8px 2px;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 0.75rem;
+        }
+        .calendar-table td {
+            padding: 6px 2px;
+        }
+        .date-cell {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        .date-num {
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+        .calendar-table input[type="checkbox"] {
+            margin: 0;
+            transform: scale(1);
+            vertical-align: middle;
+        }
+        .today-badge {
+            background: #f5a62330;
+        }
+        .real-time-number {
+            font-size: 2.2rem;
+            font-weight: 800;
+            font-family: monospace;
+            background: #00000030;
+            display: inline-block;
+            padding: 6px 20px;
+            border-radius: 60px;
+            margin: 10px 0;
+            letter-spacing: 1px;
+        }
+        .daily-earnings {
+            background: #f5a62320;
+            border-left: 5px solid #f5a623;
+            padding: 10px 14px;
+            border-radius: 24px;
+            margin: 12px 0;
+        }
+        .flex-btns {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+        .outline-btn {
+            background: white;
+            color: #1f4e6e;
+            border: 2px solid #1f4e6e;
+        }
+        .unpaid-section {
+            margin-top: 20px;
+            background: rgba(0,0,0,0.25);
+            border-radius: 24px;
+            padding: 12px 16px;
+            backdrop-filter: blur(4px);
+        }
+        .unpaid-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+        .unpaid-add-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            align-items: center;
+            background: rgba(255,255,255,0.15);
+            padding: 10px;
+            border-radius: 50px;
+        }
+        .unpaid-add-row input, .unpaid-add-row button {
+            margin: 0;
+            background: white;
+            color: #1e2f3a;
+            font-size: 0.8rem;
+        }
+        .unpaid-list {
+            max-height: 180px;
+            overflow-y: auto;
+            font-size: 0.8rem;
+        }
+        .unpaid-item {
+            background: #ffffff20;
+            margin: 5px 0;
+            padding: 6px 10px;
+            border-radius: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .unpaid-actions {
+            display: flex;
+            gap: 6px;
+        }
+        .edit-unpaid, .delete-unpaid {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 2px 6px;
+            border-radius: 30px;
+            transition: 0.2s;
+        }
+        .inline-edit {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            background: rgba(0,0,0,0.5);
+            padding: 4px 8px;
+            border-radius: 40px;
+            flex-wrap: wrap;
+        }
+        .inline-edit input {
+            width: 100px;
+            padding: 4px;
+            border-radius: 20px;
+            border: none;
+            font-size: 0.8rem;
+        }
+        .error-msg {
+            color: #ffb347;
+            font-size: 0.7rem;
+            margin-top: 4px;
+            margin-left: 8px;
+        }
+        .salary-info-grid {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin: 16px 0 10px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 28px;
+            padding: 12px 16px;
+            justify-content: space-between;
+        }
+        .salary-info-card {
+            text-align: center;
+            flex: 1;
+            min-width: 70px;
+        }
+        .salary-info-label {
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+        .salary-info-value {
+            font-size: 1.2rem;
+            font-weight: 800;
+        }
+        .top-settings {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 8px;
+            gap: 12px;
+        }
+        .gear-btn {
+            background: transparent !important;
+            color: #f5a623 !important;
+            font-size: 2rem !important;
+            padding: 0 !important;
+            margin: 0;
+            width: auto;
+            border: none;
+            box-shadow: none;
+        }
+        .gear-btn:hover {
+            background: transparent !important;
+            transform: scale(1.1);
+            color: #ffcc66 !important;
+        }
+        .clock-container {
+            text-align: center;
+            margin-bottom: 12px;
+        }
+        .clock-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 4px;
+        }
+        .real-time-clock {
+            font-size: 1.8rem;
+            font-weight: 700;
+            font-family: monospace;
+            letter-spacing: 2px;
+            background: rgba(0,0,0,0.3);
+            display: inline-block;
+            padding: 6px 20px;
+            border-radius: 60px;
+        }
+        .countdown-timer {
+            font-size: 0.9rem;
+            margin-top: 6px;
+            opacity: 0.9;
+        }
+        .coffee-link {
+            text-align: center;
+            margin-top: 16px;
+            padding: 10px;
+            font-size: 0.85rem;
+            border-top: 1px solid rgba(255,255,255,0.2);
+        }
+        .coffee-link a {
+            color: #f5a623;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .toggle-salary-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 4px 12px;
+            font-size: 0.85rem;
+            border-radius: 30px;
+            margin: 8px 0 0 0;
+            width: auto;
+        }
+        .toggle-salary-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        /* 标题行：文字与按钮紧贴 */
+        .monthly-header {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 6px;
+            gap: 6px;
+        }
+        .monthly-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .hide-title-btn {
+            background: transparent;
+            border: none;
+            font-size: 1.2rem;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 0;
+            margin: 0;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            line-height: 1;
+            opacity: 0.8;
+            transition: 0.2s;
+        }
+        .hide-title-btn:hover {
+            opacity: 1;
+            transform: none;
+            background: transparent;
+            color: #f5a623;
+        }
+        @media (max-width: 640px) {
+            .settings-panel {
+                padding: 12px 16px;
+            }
+            .real-time-area {
+                padding: 16px 12px;
+            }
+            .section-title {
+                font-size: 1.2rem;
+            }
+            .calendar-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+            .month-picker {
+                justify-content: center;
+            }
+            .work-hours-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            .day-card {
+                padding: 8px 10px;
+            }
+            .time-row {
+                flex-wrap: wrap;
+            }
+            .time-row label {
+                width: 85px;
+            }
+            .monthly-salary {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .flex-btns {
+                flex-direction: column;
+            }
+            .flex-btns button {
+                width: 100%;
+            }
+            .real-time-number {
+                font-size: 1.8rem;
+                padding: 4px 16px;
+            }
+            .daily-earnings {
+                font-size: 0.9rem;
+            }
+            .daily-earnings span {
+                font-size: 1.4rem !important;
+            }
+            .salary-info-value {
+                font-size: 1rem;
+            }
+            .unpaid-add-row {
+                flex-wrap: nowrap;
+                padding: 6px 8px;
+                gap: 6px;
+            }
+            .unpaid-add-row input[type="date"] {
+                flex: 2;
+                min-width: 0;
+                width: auto;
+                font-size: 0.75rem;
+                padding: 5px 4px;
+            }
+            .unpaid-add-row input[type="number"] {
+                width: 65px;
+                min-width: 55px;
+                font-size: 0.75rem;
+                padding: 5px 4px;
+            }
+            .unpaid-add-row button {
+                width: 44px;
+                padding: 5px 0;
+                font-size: 1rem;
+            }
+            .real-time-clock {
+                font-size: 1.5rem;
+            }
+            .countdown-timer {
+                font-size: 0.8rem;
+            }
+            .coffee-link {
+                font-size: 0.75rem;
+            }
+            .calendar-table th, .calendar-table td {
+                padding: 4px 2px;
+                font-size: 0.7rem;
+            }
+            .calendar-table input[type="checkbox"] {
+                transform: scale(0.9);
+            }
+            .gear-btn {
+                font-size: 1.8rem !important;
+            }
+            .monthly-title {
+                font-size: 1rem;
+            }
+            .hide-title-btn {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div id="settingsPanel" class="settings-panel">
+        <div class="section-title">⚙️ 設定</div>
+        <div class="calendar-header">
+            <div class="month-picker">
+                <span>📅</span>
+                <select id="yearSelect"></select>
+                <select id="monthSelect"></select>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <div style="font-size:0.75rem;">請勾選上班日</div>
+                <button id="toggleSaturdayBtn" style="background:#f5a623; color:#1e2f3a; padding:4px 10px;">一鍵勾選/反選星期六</button>
+            </div>
+        </div>
+        <div class="calendar-wrapper" id="calendarPreview"></div>
+        <div style="font-weight:700; margin: 12px 0 8px;">工作時段設定</div>
+        <div class="work-hours-grid" id="weekdayConfigContainer"></div>
+        <div class="monthly-salary">
+            <label style="font-weight:700;">💰 月薪 : </label>
+            <input type="number" id="monthlySalary" value="20000" step="any" style="width:160px;">
+        </div>
+        <div class="flex-btns">
+            <button id="finishSetupBtn">✅ 完成設定</button>
+            <button id="resetDailyBtn" class="outline-btn">⟳ 重設所有</button>
+        </div>
+    </div>
+
+    <div id="realTimeArea" class="real-time-area" style="display: none;">
+        <div class="top-settings">
+            <button id="openSettingsBtn" class="gear-btn">⚙️</button>
+        </div>
+        <div class="clock-container">
+            <div class="clock-label" id="dateLabel">📆 --年--月--日 (星期-)</div>
+            <div class="real-time-clock" id="realTimeClock">--:--:--</div>
+            <div class="countdown-timer" id="countdownToOff">計算中...</div>
+        </div>
+        <!-- 标题行：文字与按钮紧贴 -->
+        <div class="monthly-header">
+            <span class="monthly-title">
+                💰 本月已賺取薪金
+                <button id="toggleHideAmountBtn" class="hide-title-btn" title="隱藏/顯示金額">👁️‍🗨️</button>
+            </span>
+        </div>
+        <div class="earnings-row">
+            <div class="real-time-number" id="runningEarnings">$0.00</div>
+        </div>
+        <div class="daily-earnings">
+            💰 <strong>本日已賺取薪金</strong>    <span id="todayEarnings" style="font-size:1.6rem; font-weight:800;">$0.00</span>
+        </div>
+        
+        <div style="display: flex; justify-content: flex-start; margin-top: 5px;">
+            <button id="toggleSalaryBtn" class="toggle-salary-btn">📊 薪金詳情 ▼</button>
+        </div>
+        <div id="salaryDetailsContainer" style="display: none;">
+            <div class="salary-info-grid">
+                <div class="salary-info-card">
+                    <div class="salary-info-label">💰 月薪</div>
+                    <div class="salary-info-value" id="displayMonthlySalary">0</div>
+                </div>
+                <div class="salary-info-card">
+                    <div class="salary-info-label">💰 本日薪金</div>
+                    <div class="salary-info-value" id="displayDailyRate">0</div>
+                </div>
+                <div class="salary-info-card">
+                    <div class="salary-info-label">⏱️ 基本時薪</div>
+                    <div class="salary-info-value" id="displayOriginalHourlyRate">0</div>
+                </div>
+                <div class="salary-info-card">
+                    <div class="salary-info-label">⏱️ 實際時薪(加算無薪工時後)</div>
+                    <div class="salary-info-value" id="displayHourlyRate">0</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="sub-info" id="rateInfo" style="font-size:0.8rem;"></div>
+        <div id="timeProgressInfo" style="font-size:0.75rem; margin-top: 5px;"></div>
+        <hr style="border-color:#ffffff40;">
+        <div class="unpaid-section">
+            <div class="unpaid-header">
+                <strong>📝 額外無薪工時</strong>
+            </div>
+            <div class="unpaid-add-row">
+                <input type="date" id="unpaidDateInput" style="flex:1; min-width:130px;">
+                <input type="number" id="unpaidHoursInput" placeholder="時數" step="0.5" min="0" value="1" style="width:80px;">
+                <button id="addUnpaidBtnInline" style="font-size:1rem;">➕</button>
+            </div>
+            <div id="unpaidErrorMsg" class="error-msg" style="display:none;"></div>
+            <div id="unpaidListContainer" class="unpaid-list">
+                <div style="opacity:0.7; font-size:0.75rem;">暫無記錄，新增上方日期及時數</div>
+            </div>
+            <div id="unpaidStats" style="margin-top: 10px; font-size:0.75rem; background:#00000030; border-radius: 20px; padding: 6px 10px;">
+                本月無薪工時: 0.00 小時
+            </div>
+            <div id="unpaidOriginalWorth" style="margin-top: 8px; font-size:0.75rem; background:#00000030; border-radius: 20px; padding: 6px 10px;">
+                若按基本時薪計算: $0.00
+            </div>
+        </div>
+        <div class="coffee-link">
+            ☕ Buy me a coffee · <a href="https://payme.hsbc/nannn" target="_blank" rel="noopener noreferrer">PAYME</a>
+        </div>
+    </div>
+    <footer style="display: none;"></footer>
+</div>
+
+<script>
+    let weekConfig = [];
+    let workOverrideMap = new Map();
+    let unpaidRecords = [];
+
+    function defaultShouldWork(year, month, day) {
+        const week = new Date(year, month, day).getDay();
+        return week !== 0;
+    }
+    function getIsWorking(year, month, day) {
+        const key = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        if (workOverrideMap.has(key)) return workOverrideMap.get(key);
+        return defaultShouldWork(year, month, day);
+    }
+    
+    function timeToMinutes(t) { if(!t) return 0; let [h,m]=t.split(":").map(Number); return h*60+m; }
+    
+    function getDailyWorkHoursByConfig(weekIdx, isWorking) {
+        if (!isWorking) return 0;
+        const cfg = weekConfig[weekIdx];
+        if (!cfg || !cfg.start || !cfg.end) return 0;
+        const startMin = timeToMinutes(cfg.start);
+        const endMin = timeToMinutes(cfg.end);
+        if (startMin >= endMin) return 0;
+        let totalMins = endMin - startMin;
+        const lunchStartMin = 12 * 60;
+        const lunchDurMin = (cfg.lunchHours || 0) * 60;
+        const lunchEndMin = lunchStartMin + lunchDurMin;
+        let lunchOverlap = Math.max(0, Math.min(endMin, lunchEndMin) - Math.max(startMin, lunchStartMin));
+        let workMins = totalMins - lunchOverlap;
+        return workMins > 0 ? workMins / 60 : 0;
+    }
+    
+    function getWorkIntervalsForDateByConfig(weekIdx, isWorking) {
+        if (!isWorking) return [];
+        const cfg = weekConfig[weekIdx];
+        if (!cfg || !cfg.start || !cfg.end) return [];
+        let startMin = timeToMinutes(cfg.start);
+        let endMin = timeToMinutes(cfg.end);
+        if (startMin >= endMin) return [];
+        const lunchStartMin = 12 * 60;
+        const lunchDurMin = (cfg.lunchHours || 0) * 60;
+        const lunchEndMin = lunchStartMin + lunchDurMin;
+        let intervals = [];
+        let firstEnd = Math.min(endMin, lunchStartMin);
+        if (firstEnd > startMin) intervals.push([startMin, firstEnd]);
+        let secondStart = Math.max(startMin, lunchEndMin);
+        if (secondStart < endMin) intervals.push([secondStart, endMin]);
+        return intervals;
+    }
+    
+    let currentViewYear = new Date().getFullYear();
+    let currentViewMonth = new Date().getMonth();
+    let realTimeEnabled = false;
+    let monthlySalaryHKD = 20000;
+    let computedHourlyRate = 0;
+    let originalHourlyRate = 0;
+    let computedDailyAvg = 0;
+    let originalTotalWorkHours = 0;
+    let totalWorkHoursWithUnpaid = 0;
+    let realCurrentYear = 2025, realCurrentMonth = 0;
+    let updateInterval = null;
+    
+    let isAmountHidden = false;
+    
+    const settingsPanel = document.getElementById('settingsPanel');
+    const realTimeArea = document.getElementById('realTimeArea');
+    const yearSelect = document.getElementById('yearSelect');
+    const monthSelect = document.getElementById('monthSelect');
+    const calendarDiv = document.getElementById('calendarPreview');
+    const weekdayContainer = document.getElementById('weekdayConfigContainer');
+    const monthlySalaryInput = document.getElementById('monthlySalary');
+    const finishBtn = document.getElementById('finishSetupBtn');
+    const resetDailyBtn = document.getElementById('resetDailyBtn');
+    const openSettingsBtn = document.getElementById('openSettingsBtn');
+    const toggleSaturdayBtn = document.getElementById('toggleSaturdayBtn');
+    const toggleSalaryBtn = document.getElementById('toggleSalaryBtn');
+    const salaryDetailsContainer = document.getElementById('salaryDetailsContainer');
+    const runningSpan = document.getElementById('runningEarnings');
+    const todayEarningsSpan = document.getElementById('todayEarnings');
+    const rateInfoDiv = document.getElementById('rateInfo');
+    const timeProgressSpan = document.getElementById('timeProgressInfo');
+    const unpaidListContainer = document.getElementById('unpaidListContainer');
+    const unpaidStatsSpan = document.getElementById('unpaidStats');
+    const unpaidOriginalWorthSpan = document.getElementById('unpaidOriginalWorth');
+    const unpaidDateInput = document.getElementById('unpaidDateInput');
+    const unpaidHoursInput = document.getElementById('unpaidHoursInput');
+    const addUnpaidBtnInline = document.getElementById('addUnpaidBtnInline');
+    const unpaidErrorMsg = document.getElementById('unpaidErrorMsg');
+    const displayMonthlySalarySpan = document.getElementById('displayMonthlySalary');
+    const displayDailyRateSpan = document.getElementById('displayDailyRate');
+    const displayHourlyRateSpan = document.getElementById('displayHourlyRate');
+    const displayOriginalHourlyRateSpan = document.getElementById('displayOriginalHourlyRate');
+    const realTimeClockSpan = document.getElementById('realTimeClock');
+    const countdownSpan = document.getElementById('countdownToOff');
+    const toggleHideAmountBtn = document.getElementById('toggleHideAmountBtn');
+    const dateLabelSpan = document.getElementById('dateLabel');
+    
+    let salaryDetailsExpanded = false;
+    function updateSalaryDetailsVisibility() {
+        if (salaryDetailsExpanded) {
+            salaryDetailsContainer.style.display = 'block';
+            toggleSalaryBtn.innerHTML = '📊 薪金詳情 ▼';
+        } else {
+            salaryDetailsContainer.style.display = 'none';
+            toggleSalaryBtn.innerHTML = '📊 薪金詳情 ▶';
+        }
+    }
+    function toggleSalaryDetails() {
+        salaryDetailsExpanded = !salaryDetailsExpanded;
+        updateSalaryDetailsVisibility();
+    }
+    
+    function formatSalary(value) {
+        if (value === undefined || value === null) return "0";
+        let num = parseFloat(value);
+        if (isNaN(num)) return "0";
+        if (Number.isInteger(num)) return num.toString();
+        return parseFloat(num.toFixed(2)).toString();
+    }
+    
+    function saveState() {
+        const overrideObj = {};
+        for (let [key, value] of workOverrideMap.entries()) {
+            overrideObj[key] = value;
+        }
+        const state = {
+            weekConfig: weekConfig,
+            workOverrideMap: overrideObj,
+            unpaidRecords: unpaidRecords,
+            monthlySalaryHKD: monthlySalaryHKD,
+            currentViewYear: currentViewYear,
+            currentViewMonth: currentViewMonth,
+            isAmountHidden: isAmountHidden
+        };
+        localStorage.setItem('hkSalaryCalculator', JSON.stringify(state));
+    }
+    
+    function loadState() {
+        const saved = localStorage.getItem('hkSalaryCalculator');
+        if (!saved) return false;
+        try {
+            const state = JSON.parse(saved);
+            if (state.weekConfig) weekConfig = state.weekConfig;
+            if (state.workOverrideMap) {
+                workOverrideMap.clear();
+                for (let [key, value] of Object.entries(state.workOverrideMap)) {
+                    workOverrideMap.set(key, value);
+                }
+            }
+            if (state.unpaidRecords) unpaidRecords = state.unpaidRecords;
+            if (state.monthlySalaryHKD) monthlySalaryHKD = state.monthlySalaryHKD;
+            if (state.currentViewYear) currentViewYear = state.currentViewYear;
+            if (state.currentViewMonth) currentViewMonth = state.currentViewMonth;
+            if (typeof state.isAmountHidden === 'boolean') isAmountHidden = state.isAmountHidden;
+            monthlySalaryInput.value = monthlySalaryHKD;
+            renderWeekConfigUI();
+            return true;
+        } catch(e) {
+            console.warn("讀取儲存資料失敗", e);
+            return false;
+        }
+    }
+    
+    function autoSave() {
+        saveState();
+    }
+    
+    function toggleAmountVisibility() {
+        isAmountHidden = !isAmountHidden;
+        autoSave();
+        updateRealTimeEarnings();
+    }
+    
+    function getDailyExpectedEarnings(year, month, day, hourlyRate) {
+        const working = getIsWorking(year, month, day);
+        const weekIdx = new Date(year, month, day).getDay();
+        const workHours = getDailyWorkHoursByConfig(weekIdx, working);
+        return workHours * hourlyRate;
+    }
+    
+    function initWeekConfig() {
+        let cfg = [];
+        for(let i=0;i<7;i++) {
+            if(i===0) cfg.push({ start: "", end: "", lunchHours: 1 });
+            else cfg.push({ start: "09:00", end: "18:00", lunchHours: 1 });
+        }
+        return cfg;
+    }
+    
+    function renderWeekConfigUI() {
+        weekdayContainer.innerHTML = '';
+        for(let i=1;i<=7;i++) {
+            let realIdx = (i===7)?0:i;
+            let cfg = weekConfig[realIdx];
+            let dayName = (i===7)?"星期日":`星期${'一二三四五六'[i-1]}`;
+            const card = document.createElement('div');
+            card.className = 'day-card';
+            card.innerHTML = `
+                <div class="day-name">${dayName}</div>
+                <div class="time-row"><label>⏰ 上班時間</label><input type="time" class="work-start" step="900" value="${cfg.start||''}"></div>
+                <div class="time-row"><label>⏰ 下班時間</label><input type="time" class="work-end" step="900" value="${cfg.end||''}"></div>
+                <div class="time-row"><label>🍱 午休時數</label><input type="number" class="lunch-hours" step="0.25" min="0" max="3" value="${cfg.lunchHours}"></div>
+            `;
+            weekdayContainer.appendChild(card);
+            const startInp = card.querySelector('.work-start');
+            const endInp = card.querySelector('.work-end');
+            const lunchInp = card.querySelector('.lunch-hours');
+            const updateCfg = () => {
+                weekConfig[realIdx] = {
+                    start: startInp.value,
+                    end: endInp.value,
+                    lunchHours: parseFloat(lunchInp.value) || 0
+                };
+                if(realTimeEnabled) {
+                    refreshRatesAndTotalHours();
+                    updateRealTimeEarnings();
+                } else {
+                    renderCalendar(currentViewYear, currentViewMonth);
+                }
+                autoSave();
+            };
+            startInp.addEventListener('change', updateCfg);
+            endInp.addEventListener('change', updateCfg);
+            lunchInp.addEventListener('change', updateCfg);
+        }
+    }
+    
+    function computeOriginalTotalWorkHours(year, month) {
+        const daysInMonth = new Date(year, month+1, 0).getDate();
+        let total = 0;
+        for(let d=1; d<=daysInMonth; d++) {
+            const working = getIsWorking(year, month, d);
+            const weekIdx = new Date(year, month, d).getDay();
+            total += getDailyWorkHoursByConfig(weekIdx, working);
+        }
+        return total;
+    }
+    
+    function getUnpaidHoursInMonth(year, month) {
+        let total = 0;
+        for(let rec of unpaidRecords) {
+            const [y,m,d] = rec.dateStr.split('-').map(Number);
+            if(y === year && (m-1) === month) total += rec.hours;
+        }
+        return total;
+    }
+    
+    function refreshRatesAndTotalHours() {
+        const now = new Date();
+        realCurrentYear = now.getFullYear();
+        realCurrentMonth = now.getMonth();
+        originalTotalWorkHours = computeOriginalTotalWorkHours(realCurrentYear, realCurrentMonth);
+        const unpaidThisMonth = getUnpaidHoursInMonth(realCurrentYear, realCurrentMonth);
+        totalWorkHoursWithUnpaid = originalTotalWorkHours + unpaidThisMonth;
+        
+        if(originalTotalWorkHours > 0 && monthlySalaryHKD > 0) {
+            originalHourlyRate = monthlySalaryHKD / originalTotalWorkHours;
+        } else {
+            originalHourlyRate = 0;
+        }
+        
+        if(totalWorkHoursWithUnpaid <= 0 || monthlySalaryHKD <= 0) {
+            computedHourlyRate = 0;
+        } else {
+            computedHourlyRate = monthlySalaryHKD / totalWorkHoursWithUnpaid;
+        }
+        
+        let workDaysCount = 0;
+        const days = new Date(realCurrentYear, realCurrentMonth+1, 0).getDate();
+        for(let d=1; d<=days; d++) if(getIsWorking(realCurrentYear, realCurrentMonth, d)) workDaysCount++;
+        computedDailyAvg = workDaysCount>0 ? monthlySalaryHKD / workDaysCount : 0;
+        
+        if(realTimeEnabled) {
+            rateInfoDiv.innerHTML = `📆 本月工時(含無薪): ${totalWorkHoursWithUnpaid.toFixed(2)} 小時 | 基本工時 ${originalTotalWorkHours.toFixed(2)} 小時`;
+            displayMonthlySalarySpan.innerText = `$${formatSalary(monthlySalaryHKD)}`;
+            displayOriginalHourlyRateSpan.innerText = `$${originalHourlyRate.toFixed(2)}`;
+            displayHourlyRateSpan.innerText = `$${computedHourlyRate.toFixed(2)}`;
+        }
+        updateUnpaidStatsDisplay();
+    }
+    
+    function getAccumulatedAndTodayEarnings(nowDate, year, month, hourlyRate) {
+        if(hourlyRate === 0) return { monthTotal: 0, todayTotal: 0 };
+        let totalSeconds = 0;
+        let todaySeconds = 0;
+        const todayDate = nowDate.getDate();
+        const currentTimestamp = nowDate.getTime();
+        const daysInMonth = new Date(year, month+1, 0).getDate();
+        for(let d=1; d<=daysInMonth; d++) {
+            const working = getIsWorking(year, month, d);
+            const weekIdx = new Date(year, month, d).getDay();
+            const intervals = getWorkIntervalsForDateByConfig(weekIdx, working);
+            if(intervals.length === 0) continue;
+            for(let iv of intervals) {
+                let startMin = iv[0];
+                let endMin = iv[1];
+                let ivStartMs = new Date(year, month, d, Math.floor(startMin/60), startMin%60, 0).getTime();
+                let ivEndMs = new Date(year, month, d, Math.floor(endMin/60), endMin%60, 0).getTime();
+                let effectiveEnd = Math.min(ivEndMs, currentTimestamp);
+                if(effectiveEnd > ivStartMs) {
+                    let secs = (effectiveEnd - ivStartMs) / 1000;
+                    totalSeconds += secs;
+                    if(d === todayDate) todaySeconds += secs;
+                }
+            }
+        }
+        return { monthTotal: (totalSeconds / 3600) * hourlyRate, todayTotal: (todaySeconds / 3600) * hourlyRate };
+    }
+    
+    // 更新日期标签和倒计时
+    function updateClockAndCountdown() {
+        if (!realTimeEnabled) return;
+        const now = new Date();
+        const hours = now.getHours().toString().padStart(2,'0');
+        const minutes = now.getMinutes().toString().padStart(2,'0');
+        const seconds = now.getSeconds().toString().padStart(2,'0');
+        realTimeClockSpan.innerText = `${hours}:${minutes}:${seconds}`;
+        
+        // 更新日期标签
+        const year = now.getFullYear();
+        const month = now.getMonth() + 1;
+        const day = now.getDate();
+        const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+        const weekdayName = weekdays[now.getDay()];
+        dateLabelSpan.innerHTML = `📆 ${year}年${month.toString().padStart(2,'0')}月${day.toString().padStart(2,'0')}日 (${weekdayName})`;
+        
+        // 倒计时逻辑
+        const curYear = now.getFullYear();
+        const curMonth = now.getMonth();
+        const curDay = now.getDate();
+        const weekIdx = now.getDay();
+        const isWorking = getIsWorking(curYear, curMonth, curDay);
+        
+        if (!isWorking) {
+            countdownSpan.innerText = "⏸️ 今日休息";
+            return;
+        }
+        
+        const cfg = weekConfig[weekIdx];
+        if (!cfg || !cfg.start || !cfg.end) {
+            countdownSpan.innerText = "⚠️ 未設定上下班時間";
+            return;
+        }
+        
+        const startTimeStr = cfg.start;
+        const endTimeStr = cfg.end;
+        if (!startTimeStr || !endTimeStr) {
+            countdownSpan.innerText = "⚠️ 未設定上下班時間";
+            return;
+        }
+        
+        const [startHour, startMin] = startTimeStr.split(":").map(Number);
+        const [endHour, endMin] = endTimeStr.split(":").map(Number);
+        const startTimestamp = new Date(curYear, curMonth, curDay, startHour, startMin, 0).getTime();
+        const endTimestamp = new Date(curYear, curMonth, curDay, endHour, endMin, 0).getTime();
+        const nowTimestamp = now.getTime();
+        
+        // 如果当前时间早于上班时间
+        if (nowTimestamp < startTimestamp) {
+            countdownSpan.innerText = "⏸️ 尚未開始";
+            return;
+        }
+        
+        // 如果已经过了下班时间
+        if (nowTimestamp >= endTimestamp) {
+            countdownSpan.innerText = "✅ 已到達下班時間";
+            return;
+        }
+        
+        // 计算距离下班剩余时间
+        const diffMs = endTimestamp - nowTimestamp;
+        const diffMinutes = Math.floor(diffMs / 60000);
+        const hoursRemain = Math.floor(diffMinutes / 60);
+        const minutesRemain = diffMinutes % 60;
+        if (hoursRemain > 0) {
+            countdownSpan.innerText = `⏳ 距離下班：${hoursRemain}小時${minutesRemain}分鐘`;
+        } else {
+            countdownSpan.innerText = `⏳ 距離下班：${minutesRemain}分鐘`;
+        }
+    }
+    
+    function updateRealTimeEarnings() {
+        if(!realTimeEnabled) return;
+        const now = new Date();
+        const curYear = now.getFullYear(), curMonth = now.getMonth();
+        if(curYear !== realCurrentYear || curMonth !== realCurrentMonth) refreshRatesAndTotalHours();
+        const { monthTotal, todayTotal } = getAccumulatedAndTodayEarnings(now, realCurrentYear, realCurrentMonth, computedHourlyRate);
+        
+        const originalAmountStr = `$${monthTotal.toFixed(2)}`;
+        if (isAmountHidden) {
+            const hiddenStr = '*'.repeat(originalAmountStr.length);
+            runningSpan.innerText = hiddenStr;
+        } else {
+            runningSpan.innerText = originalAmountStr;
+        }
+        todayEarningsSpan.innerText = `$${todayTotal.toFixed(2)}`;
+        
+        const todayExpected = getDailyExpectedEarnings(realCurrentYear, realCurrentMonth, now.getDate(), computedHourlyRate);
+        if (displayDailyRateSpan) displayDailyRateSpan.innerText = `$${todayExpected.toFixed(2)}`;
+        
+        const totalDays = new Date(realCurrentYear, realCurrentMonth+1, 0).getDate();
+        const totalSecInMonth = totalDays * 86400;
+        const nowSec = (now - new Date(realCurrentYear, realCurrentMonth,1)) / 1000;
+        timeProgressSpan.innerHTML = `⏱️ 本月進度 ${Math.min(100,(nowSec/totalSecInMonth*100)).toFixed(1)}% | 每秒增值 ≈ $${(computedHourlyRate/3600).toFixed(6)}`;
+        
+        updateClockAndCountdown();
+    }
+    
+    function startRealTimeLoop() {
+        if(updateInterval) clearInterval(updateInterval);
+        updateInterval = setInterval(() => updateRealTimeEarnings(), 100);
+        updateRealTimeEarnings();
+    }
+    
+    function finishSetup() {
+        monthlySalaryHKD = parseFloat(monthlySalaryInput.value);
+        if(isNaN(monthlySalaryHKD)) monthlySalaryHKD = 0;
+        realTimeEnabled = true;
+        refreshRatesAndTotalHours();
+        if(originalTotalWorkHours === 0 && monthlySalaryHKD>0) {
+            if(rateInfoDiv) rateInfoDiv.innerHTML += " ⚠️ 本月原始工時為0，請檢查上班日設定";
+        }
+        settingsPanel.classList.add('collapsed');
+        realTimeArea.style.display = "block";
+        startRealTimeLoop();
+        renderUnpaidList();
+        autoSave();
+    }
+    
+    function resetAll() {
+        if (confirm("確定要重設所有資料嗎？所有設定、上班日記錄及無薪工時將會被清除，並回到初始狀態。")) {
+            localStorage.removeItem('hkSalaryCalculator');
+            weekConfig = initWeekConfig();
+            workOverrideMap.clear();
+            unpaidRecords = [];
+            monthlySalaryHKD = 20000;
+            currentViewYear = new Date().getFullYear();
+            currentViewMonth = new Date().getMonth();
+            realTimeEnabled = false;
+            isAmountHidden = false;
+            if (updateInterval) clearInterval(updateInterval);
+            renderWeekConfigUI();
+            monthlySalaryInput.value = 20000;
+            yearSelect.value = currentViewYear;
+            monthSelect.value = currentViewMonth;
+            renderCalendar(currentViewYear, currentViewMonth);
+            refreshRatesAndTotalHours();
+            settingsPanel.classList.remove('collapsed');
+            realTimeArea.style.display = "none";
+            renderUnpaidList();
+            autoSave();
+        }
+    }
+    
+    function openSettings() {
+        if(updateInterval) clearInterval(updateInterval);
+        realTimeEnabled = false;
+        settingsPanel.classList.remove('collapsed');
+        realTimeArea.style.display = "none";
+        renderCalendar(currentViewYear, currentViewMonth);
+        renderWeekConfigUI();
+    }
+    
+    function toggleSaturday() {
+        const year = currentViewYear;
+        const month = currentViewMonth;
+        const daysInMonth = new Date(year, month+1, 0).getDate();
+        const saturdays = [];
+        for (let d=1; d<=daysInMonth; d++) {
+            const week = new Date(year, month, d).getDay();
+            if (week === 6) {
+                saturdays.push(d);
+            }
+        }
+        if (saturdays.length === 0) return;
+        let allWorking = true;
+        for (let d of saturdays) {
+            if (!getIsWorking(year, month, d)) {
+                allWorking = false;
+                break;
+            }
+        }
+        const target = !allWorking;
+        for (let d of saturdays) {
+            const key = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            workOverrideMap.set(key, target);
+        }
+        renderCalendar(year, month);
+        if (realTimeEnabled && year === realCurrentYear && month === realCurrentMonth) {
+            refreshRatesAndTotalHours();
+            updateRealTimeEarnings();
+        }
+        autoSave();
+    }
+    
+    function renderCalendar(year, month) {
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        let html = '<table class="calendar-table"><thead><tr>';
+        const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+        weekdays.forEach(d => html += `<th>${d}</th>`);
+        html += '<tr></thead><tbody>';
+        let date = 1;
+        for (let i = 0; i < 6; i++) {
+            html += '<tr>';
+            for (let j = 0; j < 7; j++) {
+                if (i === 0 && j < firstDay) {
+                    html += '<td></td>';
+                } else if (date > daysInMonth) {
+                    html += '<td></td>';
+                } else {
+                    const working = getIsWorking(year, month, date);
+                    const today = new Date();
+                    const isToday = (today.getFullYear() === year && today.getMonth() === month && today.getDate() === date);
+                    const checkedAttr = working ? 'checked' : '';
+                    html += `<td class="${isToday ? 'today-badge' : ''}">
+                                <div class="date-cell">
+                                    <span class="date-num">${date}</span>
+                                    <input type="checkbox" class="work-checkbox" data-year="${year}" data-month="${month}" data-day="${date}" ${checkedAttr}>
+                                </div>
+                              </td>`;
+                    date++;
+                }
+            }
+            html += '</tr>';
+            if (date > daysInMonth) break;
+        }
+        html += '</tbody></table>';
+        calendarDiv.innerHTML = html;
+        document.querySelectorAll('.work-checkbox').forEach(cb => {
+            cb.addEventListener('change', (e) => {
+                const y = parseInt(cb.dataset.year);
+                const m = parseInt(cb.dataset.month);
+                const d = parseInt(cb.dataset.day);
+                const key = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                workOverrideMap.set(key, cb.checked);
+                if (realTimeEnabled && y === realCurrentYear && m === realCurrentMonth) {
+                    refreshRatesAndTotalHours();
+                    updateRealTimeEarnings();
+                }
+                renderCalendar(currentViewYear, currentViewMonth);
+                autoSave();
+            });
+        });
+    }
+    
+    function updateCalendarFromPicker() {
+        currentViewYear = parseInt(yearSelect.value);
+        currentViewMonth = parseInt(monthSelect.value);
+        renderCalendar(currentViewYear, currentViewMonth);
+        autoSave();
+    }
+    
+    function populateYearSelect() {
+        const currentYear = new Date().getFullYear();
+        yearSelect.innerHTML = '';
+        for(let y=currentYear-1; y<=2046; y++) {
+            let opt = document.createElement('option');
+            opt.value = y;
+            opt.innerText = y;
+            yearSelect.appendChild(opt);
+        }
+        monthSelect.innerHTML = '';
+        for(let m=0; m<12; m++) {
+            let opt = document.createElement('option');
+            opt.value = m;
+            opt.innerText = `${m+1}月`;
+            monthSelect.appendChild(opt);
+        }
+    }
+    
+    function showUnpaidError(msg) {
+        if(unpaidErrorMsg) {
+            unpaidErrorMsg.innerText = msg;
+            unpaidErrorMsg.style.display = 'block';
+            setTimeout(() => { if(unpaidErrorMsg) unpaidErrorMsg.style.display = 'none'; }, 3000);
+        }
+    }
+    
+    function startEditRecord(idx, element) {
+        const rec = unpaidRecords[idx];
+        if (!rec) return;
+        const container = element.closest('.unpaid-item');
+        const editDiv = document.createElement('div');
+        editDiv.className = 'inline-edit';
+        editDiv.innerHTML = `
+            <input type="date" id="editDate" value="${rec.dateStr}" style="width:120px;">
+            <input type="number" id="editHours" step="0.5" value="${rec.hours}" style="width:80px;">
+            <button id="saveEdit" style="background:#4caf50;">✔️</button>
+            <button id="cancelEdit" style="background:#f44336;">✖️</button>
+        `;
+        container.innerHTML = '';
+        container.appendChild(editDiv);
+        const saveBtn = editDiv.querySelector('#saveEdit');
+        const cancelBtn = editDiv.querySelector('#cancelEdit');
+        saveBtn.addEventListener('click', () => {
+            const newDate = editDiv.querySelector('#editDate').value;
+            const newHours = parseFloat(editDiv.querySelector('#editHours').value);
+            if (!newDate || !/^\d{4}-\d{2}-\d{2}$/.test(newDate)) {
+                showUnpaidError("日期格式錯誤");
+                return;
+            }
+            if (isNaN(newHours) || newHours <= 0) {
+                showUnpaidError("請輸入正數時數");
+                return;
+            }
+            rec.dateStr = newDate;
+            rec.hours = newHours;
+            renderUnpaidList();
+            if(realTimeEnabled) {
+                refreshRatesAndTotalHours();
+                updateRealTimeEarnings();
+            }
+            autoSave();
+        });
+        cancelBtn.addEventListener('click', () => {
+            renderUnpaidList();
+        });
+    }
+    
+    function renderUnpaidList() {
+        if(!unpaidListContainer) return;
+        if(unpaidRecords.length === 0) {
+            unpaidListContainer.innerHTML = '<div style="opacity:0.7; font-size:0.75rem;">暫無記錄，新增上方日期及時數</div>';
+        } else {
+            let html = '';
+            unpaidRecords.forEach((rec, idx) => {
+                html += `
+                    <div class="unpaid-item" data-idx="${idx}">
+                        <span>📅 ${rec.dateStr} &nbsp; ⏱️ ${rec.hours.toFixed(2)} 小時</span>
+                        <div class="unpaid-actions">
+                            <button class="edit-unpaid" data-idx="${idx}" style="font-size:1rem;">✏️</button>
+                            <button class="delete-unpaid" data-idx="${idx}" style="font-size:1rem;">➖</button>
+                        </div>
+                    </div>
+                `;
+            });
+            unpaidListContainer.innerHTML = html;
+            document.querySelectorAll('.edit-unpaid').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const idx = parseInt(btn.dataset.idx);
+                    const itemDiv = btn.closest('.unpaid-item');
+                    startEditRecord(idx, itemDiv);
+                });
+            });
+            document.querySelectorAll('.delete-unpaid').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const idx = parseInt(btn.dataset.idx);
+                    unpaidRecords.splice(idx, 1);
+                    renderUnpaidList();
+                    if(realTimeEnabled) {
+                        refreshRatesAndTotalHours();
+                        updateRealTimeEarnings();
+                    }
+                    autoSave();
+                });
+            });
+        }
+        updateUnpaidStatsDisplay();
+    }
+    
+    function updateUnpaidStatsDisplay() {
+        if(!unpaidStatsSpan) return;
+        const unpaidThisMonth = getUnpaidHoursInMonth(realCurrentYear, realCurrentMonth);
+        unpaidStatsSpan.innerHTML = `本月無薪工時: ${unpaidThisMonth.toFixed(2)} 小時`;
+        let originalHourlyForWorth = 0;
+        if(originalTotalWorkHours > 0 && monthlySalaryHKD > 0) {
+            originalHourlyForWorth = monthlySalaryHKD / originalTotalWorkHours;
+        }
+        const originalWorth = unpaidThisMonth * originalHourlyForWorth;
+        if(unpaidOriginalWorthSpan) unpaidOriginalWorthSpan.innerHTML = `若按基本時薪計算: $${originalWorth.toFixed(2)}`;
+    }
+    
+    function addUnpaidRecord() {
+        const dateStr = unpaidDateInput.value;
+        if(!dateStr) {
+            showUnpaidError("請選擇日期");
+            return;
+        }
+        let hours = parseFloat(unpaidHoursInput.value);
+        if(isNaN(hours) || hours <= 0) {
+            showUnpaidError("請輸入有效的大於0的時數");
+            return;
+        }
+        unpaidRecords.push({ dateStr, hours });
+        renderUnpaidList();
+        if(realTimeEnabled) {
+            refreshRatesAndTotalHours();
+            updateRealTimeEarnings();
+        }
+        autoSave();
+    }
+    
+    function init() {
+        populateYearSelect();
+        const hasSaved = loadState();
+        
+        if (!hasSaved) {
+            weekConfig = initWeekConfig();
+            renderWeekConfigUI();
+            currentViewYear = new Date().getFullYear();
+            currentViewMonth = new Date().getMonth();
+            monthlySalaryInput.value = 20000;
+            monthlySalaryHKD = 20000;
+            refreshRatesAndTotalHours();
+            isAmountHidden = false;
+        }
+        
+        yearSelect.value = currentViewYear;
+        monthSelect.value = currentViewMonth;
+        renderCalendar(currentViewYear, currentViewMonth);
+        
+        if (hasSaved) {
+            realTimeEnabled = true;
+            refreshRatesAndTotalHours();
+            settingsPanel.classList.add('collapsed');
+            realTimeArea.style.display = "block";
+            startRealTimeLoop();
+            renderUnpaidList();
+        } else {
+            realTimeEnabled = false;
+            settingsPanel.classList.remove('collapsed');
+            realTimeArea.style.display = "none";
+        }
+        
+        salaryDetailsExpanded = false;
+        updateSalaryDetailsVisibility();
+        
+        finishBtn.addEventListener('click', finishSetup);
+        resetDailyBtn.addEventListener('click', resetAll);
+        openSettingsBtn.addEventListener('click', openSettings);
+        toggleSaturdayBtn.addEventListener('click', toggleSaturday);
+        toggleSalaryBtn.addEventListener('click', toggleSalaryDetails);
+        yearSelect.addEventListener('change', updateCalendarFromPicker);
+        monthSelect.addEventListener('change', updateCalendarFromPicker);
+        if(addUnpaidBtnInline) addUnpaidBtnInline.addEventListener('click', addUnpaidRecord);
+        if(toggleHideAmountBtn) toggleHideAmountBtn.addEventListener('click', toggleAmountVisibility);
+        if(unpaidDateInput) {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth()+1).padStart(2,'0');
+            const dd = String(today.getDate()).padStart(2,'0');
+            unpaidDateInput.value = `${yyyy}-${mm}-${dd}`;
+        }
+        if(unpaidHoursInput) unpaidHoursInput.value = 1;
+        
+        monthlySalaryInput.addEventListener('change', () => {
+            monthlySalaryHKD = parseFloat(monthlySalaryInput.value);
+            if(isNaN(monthlySalaryHKD)) monthlySalaryHKD = 0;
+            if(realTimeEnabled) {
+                refreshRatesAndTotalHours();
+                updateRealTimeEarnings();
+            } else {
+                refreshRatesAndTotalHours();
+            }
+            autoSave();
+        });
+    }
+    init();
+</script>
+</body>
+</html>
