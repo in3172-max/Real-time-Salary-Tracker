@@ -149,7 +149,6 @@
             overflow: hidden;
             box-shadow: 0 1px 4px rgba(0,0,0,0.05);
             table-layout: fixed;
-            min-width: 300px;
         }
         .calendar-table th, .calendar-table td {
             border: 1px solid #e2e8f0;
@@ -174,6 +173,7 @@
             align-items: center;
             justify-content: center;
             gap: 4px;
+            min-height: 55px;
         }
         .date-num {
             font-weight: 700;
@@ -188,6 +188,9 @@
         }
         .today-badge {
             background: #f5a62330;
+        }
+        .empty-cell .date-cell {
+            visibility: hidden;
         }
         .real-time-number {
             font-size: 2.2rem;
@@ -523,7 +526,7 @@
                 font-size: 0.75rem;
             }
             .calendar-table th, .calendar-table td {
-                padding: 6px 1px;
+                padding: 4px 1px;
                 font-size: 0.7rem;
             }
             .date-num {
@@ -546,6 +549,9 @@
             .copyright-footer {
                 font-size: 0.6rem;
                 padding: 8px 12px;
+            }
+            .date-cell {
+                min-height: 45px;
             }
         }
     </style>
@@ -701,7 +707,7 @@
         }
     })();
     
-    // ==================== 核心逻辑（已移除午休） ====================
+    // ==================== 核心逻辑（无午休） ====================
     let weekConfig = [];
     let workOverrideMap = new Map();
     let unpaidRecords = [];
@@ -718,7 +724,6 @@
     
     function timeToMinutes(t) { if(!t) return 0; let [h,m]=t.split(":").map(Number); return h*60+m; }
     
-    // 全天工作小时数（从上班到下班，不扣除任何时间）
     function getDailyWorkHoursByConfig(weekIdx, isWorking) {
         if (!isWorking) return 0;
         const cfg = weekConfig[weekIdx];
@@ -729,7 +734,6 @@
         return (endMin - startMin) / 60;
     }
     
-    // 工作区间：单一连续区间
     function getWorkIntervalsForDateByConfig(weekIdx, isWorking) {
         if (!isWorking) return [];
         const cfg = weekConfig[weekIdx];
@@ -1082,21 +1086,27 @@
         const firstDay = new Date(year, month, 1).getDay();
         const daysInMonth = new Date(year, month+1, 0).getDate();
         let html = '<table class="calendar-table"><thead><tr>';
-        ['日','一','二','三','四','五','六'].forEach(d => html += `<th>${d}</th>`);
+        const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+        weekdays.forEach(d => html += `<th>${d}</th>`);
         html += '</tr></thead><tbody>';
         let date = 1;
-        for (let i=0; i<6; i++) {
+        for (let i = 0; i < 6; i++) {
             html += '<tr>';
-            for (let j=0; j<7; j++) {
-                if (i===0 && j<firstDay) html += '<td class="empty"><td>';
-                else if (date > daysInMonth) html += '<td class="empty"></td>';
-                else {
+            for (let j = 0; j < 7; j++) {
+                if (i === 0 && j < firstDay) {
+                    // 空单元格：保持占位但无内容，避免布局偏移
+                    html += '<td class="empty-cell"><div class="date-cell" style="visibility:hidden;">&nbsp;</div></td>';
+                } else if (date > daysInMonth) {
+                    html += '<td class="empty-cell"><div class="date-cell" style="visibility:hidden;">&nbsp;</div></td>';
+                } else {
                     const working = getIsWorking(year, month, date);
-                    const isToday = (new Date().getFullYear()===year && new Date().getMonth()===month && new Date().getDate()===date);
+                    const today = new Date();
+                    const isToday = (today.getFullYear() === year && today.getMonth() === month && today.getDate() === date);
+                    const checkedAttr = working ? 'checked' : '';
                     html += `<td class="${isToday ? 'today-badge' : ''}">
                                 <div class="date-cell">
                                     <span class="date-num">${date}</span>
-                                    <input type="checkbox" class="work-checkbox" data-year="${year}" data-month="${month}" data-day="${date}" ${working ? 'checked' : ''}>
+                                    <input type="checkbox" class="work-checkbox" data-year="${year}" data-month="${month}" data-day="${date}" ${checkedAttr}>
                                 </div>
                              </td>`;
                     date++;
