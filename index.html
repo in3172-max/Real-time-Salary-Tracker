@@ -131,8 +131,9 @@
         .calendar-wrapper {
             overflow-x: auto;
             margin: 12px 0;
+            -webkit-overflow-scrolling: touch;
         }
-        /* 修复日历错位 */
+        /* 日历表格修复：固定列宽，确保7列完整显示 */
         .calendar-table {
             width: 100%;
             border-collapse: collapse;
@@ -141,14 +142,21 @@
             overflow: hidden;
             box-shadow: 0 1px 4px rgba(0,0,0,0.05);
             table-layout: fixed;
-            min-width: 500px;
+            min-width: 300px; /* 确保最小宽度，但手机端按比例缩放 */
         }
         .calendar-table th, .calendar-table td {
             border: 1px solid #e2e8f0;
-            padding: 8px 2px;
             text-align: center;
             vertical-align: middle;
-            font-size: 0.75rem;
+            padding: 8px 2px;
+            width: 14.2857%; /* 100% / 7 */
+            box-sizing: border-box;
+        }
+        .calendar-table th {
+            font-weight: 700;
+            background-color: #f8fafc;
+            color: #1f3e53;
+            font-size: 0.85rem;
         }
         .calendar-table td {
             padding: 6px 2px;
@@ -162,12 +170,14 @@
         }
         .date-num {
             font-weight: 700;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
         }
         .calendar-table input[type="checkbox"] {
             margin: 0;
             transform: scale(1);
             vertical-align: middle;
+            width: 18px;
+            height: 18px;
         }
         .today-badge {
             background: #f5a62330;
@@ -375,7 +385,6 @@
         .toggle-salary-btn:hover {
             background: rgba(255,255,255,0.3);
         }
-        /* 标题行：文字与按钮紧贴 */
         .monthly-header {
             display: flex;
             align-items: center;
@@ -411,6 +420,7 @@
             background: transparent;
             color: #f5a623;
         }
+        /* 手机端优化 */
         @media (max-width: 640px) {
             .settings-panel {
                 padding: 12px 16px;
@@ -498,11 +508,16 @@
                 font-size: 0.75rem;
             }
             .calendar-table th, .calendar-table td {
-                padding: 4px 2px;
+                padding: 6px 1px;
                 font-size: 0.7rem;
             }
+            .date-num {
+                font-size: 0.75rem;
+            }
             .calendar-table input[type="checkbox"] {
-                transform: scale(0.9);
+                transform: scale(0.8);
+                width: 16px;
+                height: 16px;
             }
             .gear-btn {
                 font-size: 1.8rem !important;
@@ -553,7 +568,6 @@
             <div class="real-time-clock" id="realTimeClock">--:--:--</div>
             <div class="countdown-timer" id="countdownToOff">計算中...</div>
         </div>
-        <!-- 标题行：文字与按钮紧贴 -->
         <div class="monthly-header">
             <span class="monthly-title">
                 💰 本月已賺取薪金
@@ -931,7 +945,6 @@
         return { monthTotal: (totalSeconds / 3600) * hourlyRate, todayTotal: (todaySeconds / 3600) * hourlyRate };
     }
     
-    // 更新日期标签和倒计时
     function updateClockAndCountdown() {
         if (!realTimeEnabled) return;
         const now = new Date();
@@ -940,7 +953,6 @@
         const seconds = now.getSeconds().toString().padStart(2,'0');
         realTimeClockSpan.innerText = `${hours}:${minutes}:${seconds}`;
         
-        // 更新日期标签
         const year = now.getFullYear();
         const month = now.getMonth() + 1;
         const day = now.getDate();
@@ -948,7 +960,6 @@
         const weekdayName = weekdays[now.getDay()];
         dateLabelSpan.innerHTML = `📆 ${year}年${month.toString().padStart(2,'0')}月${day.toString().padStart(2,'0')}日 (${weekdayName})`;
         
-        // 倒计时逻辑
         const curYear = now.getFullYear();
         const curMonth = now.getMonth();
         const curDay = now.getDate();
@@ -979,19 +990,16 @@
         const endTimestamp = new Date(curYear, curMonth, curDay, endHour, endMin, 0).getTime();
         const nowTimestamp = now.getTime();
         
-        // 如果当前时间早于上班时间
         if (nowTimestamp < startTimestamp) {
             countdownSpan.innerText = "⏸️ 尚未開始";
             return;
         }
         
-        // 如果已经过了下班时间
         if (nowTimestamp >= endTimestamp) {
             countdownSpan.innerText = "✅ 已到達下班時間";
             return;
         }
         
-        // 计算距离下班剩余时间
         const diffMs = endTimestamp - nowTimestamp;
         const diffMinutes = Math.floor(diffMs / 60000);
         const hoursRemain = Math.floor(diffMinutes / 60);
@@ -1129,9 +1137,9 @@
             html += '<tr>';
             for (let j = 0; j < 7; j++) {
                 if (i === 0 && j < firstDay) {
-                    html += '<td></td>';
+                    html += '<td class="empty"></td>';
                 } else if (date > daysInMonth) {
-                    html += '<td></td>';
+                    html += '<td class="empty"></td>';
                 } else {
                     const working = getIsWorking(year, month, date);
                     const today = new Date();
@@ -1142,7 +1150,7 @@
                                     <span class="date-num">${date}</span>
                                     <input type="checkbox" class="work-checkbox" data-year="${year}" data-month="${month}" data-day="${date}" ${checkedAttr}>
                                 </div>
-                              </td>`;
+                               </td>`;
                     date++;
                 }
             }
