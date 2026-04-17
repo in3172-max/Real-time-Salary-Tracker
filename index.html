@@ -88,6 +88,15 @@
             color: #1e2f3a;
             transform: scale(0.96);
         }
+        .install-btn {
+            background: #f5a623;
+            color: #1e2f3a;
+            margin-left: auto;
+        }
+        .install-btn:hover {
+            background: #ffcc66;
+            transform: scale(0.96);
+        }
         .work-hours-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -425,6 +434,15 @@
             background: transparent;
             color: #f5a623;
         }
+        .copyright {
+            text-align: center;
+            font-size: 0.7rem;
+            padding: 12px 16px;
+            background: rgba(0,0,0,0.1);
+            color: #ffffffaa;
+            margin-top: 16px;
+            border-radius: 30px;
+        }
         /* 手机端优化 */
         @media (max-width: 640px) {
             .settings-panel {
@@ -533,6 +551,10 @@
             .hide-title-btn {
                 font-size: 1rem;
             }
+            .copyright {
+                font-size: 0.6rem;
+                padding: 8px 12px;
+            }
         }
     </style>
 </head>
@@ -546,6 +568,7 @@
                 <select id="yearSelect"></select>
                 <select id="monthSelect"></select>
             </div>
+            <button id="installPwaBtn" class="install-btn" style="display: none;">📲 安裝應用程式</button>
             <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                 <div style="font-size:0.75rem;">請勾選上班日</div>
                 <button id="toggleSaturdayBtn" style="background:#f5a623; color:#1e2f3a; padding:4px 10px;">一鍵勾選/反選星期六</button>
@@ -636,6 +659,9 @@
         <div class="coffee-link">
             ☕ Buy me a coffee · <a href="https://payme.hsbc/nannn" target="_blank" rel="noopener noreferrer">PAYME</a>
         </div>
+        <div class="copyright">
+            Copyright © 2026 Ivan N. All Rights Reserved.
+        </div>
     </div>
     <footer style="display: none;"></footer>
 </div>
@@ -703,16 +729,38 @@
             });
         }
         
-        // 可选：监听 beforeinstallprompt 以提供自定义安装提示 (暂不干扰体验)
+        // PWA 安装按钮逻辑
         let deferredPrompt;
+        const installBtn = document.getElementById('installPwaBtn');
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            // 可以添加一个按钮来触发安装，但为了简洁，不额外增加UI
+            if (installBtn) installBtn.style.display = 'inline-flex';
         });
+        
+        if (installBtn) {
+            installBtn.addEventListener('click', async () => {
+                if (!deferredPrompt) return;
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`User response to the install prompt: ${outcome}`);
+                deferredPrompt = null;
+                installBtn.style.display = 'none';
+            });
+        }
+        
+        // iOS 检测与提示 (iOS 不支持 beforeinstallprompt，通过检测显示提示)
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        if (isIOS && installBtn) {
+            installBtn.style.display = 'inline-flex';
+            installBtn.innerText = '📲 分享/安裝 (iOS)';
+            installBtn.addEventListener('click', () => {
+                alert("請點擊瀏覽器分享按鈕，然後選擇「加入主畫面」以安裝應用程式。");
+            });
+        }
     })();
     
-    // ==================== 原有业务逻辑 (保持完整) ====================
+    // ==================== 原有业务逻辑 (保持完整，无修改，确保日历稳定) ====================
     let weekConfig = [];
     let workOverrideMap = new Map();
     let unpaidRecords = [];
