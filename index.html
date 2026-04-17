@@ -132,7 +132,7 @@
             overflow-x: auto;
             margin: 12px 0;
         }
-        /* 修复日历错位：确保表格稳定，每个单元格内容垂直居中，不换行 */
+        /* 修复日历错位 */
         .calendar-table {
             width: 100%;
             border-collapse: collapse;
@@ -549,7 +549,7 @@
             <button id="openSettingsBtn" class="gear-btn">⚙️</button>
         </div>
         <div class="clock-container">
-            <div class="clock-label">🕒 現在時間</div>
+            <div class="clock-label" id="dateLabel">📆 --年--月--日 (星期-)</div>
             <div class="real-time-clock" id="realTimeClock">--:--:--</div>
             <div class="countdown-timer" id="countdownToOff">計算中...</div>
         </div>
@@ -717,6 +717,7 @@
     const realTimeClockSpan = document.getElementById('realTimeClock');
     const countdownSpan = document.getElementById('countdownToOff');
     const toggleHideAmountBtn = document.getElementById('toggleHideAmountBtn');
+    const dateLabelSpan = document.getElementById('dateLabel');
     
     let salaryDetailsExpanded = false;
     function updateSalaryDetailsVisibility() {
@@ -794,7 +795,6 @@
         updateRealTimeEarnings();
     }
     
-    // 計算某一天的全天預期薪金（最大值）
     function getDailyExpectedEarnings(year, month, day, hourlyRate) {
         const working = getIsWorking(year, month, day);
         const weekIdx = new Date(year, month, day).getDay();
@@ -931,6 +931,7 @@
         return { monthTotal: (totalSeconds / 3600) * hourlyRate, todayTotal: (todaySeconds / 3600) * hourlyRate };
     }
     
+    // 更新日期标签和倒计时
     function updateClockAndCountdown() {
         if (!realTimeEnabled) return;
         const now = new Date();
@@ -939,40 +940,66 @@
         const seconds = now.getSeconds().toString().padStart(2,'0');
         realTimeClockSpan.innerText = `${hours}:${minutes}:${seconds}`;
         
+        // 更新日期标签
         const year = now.getFullYear();
-        const month = now.getMonth();
+        const month = now.getMonth() + 1;
         const day = now.getDate();
+        const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+        const weekdayName = weekdays[now.getDay()];
+        dateLabelSpan.innerHTML = `📆 ${year}年${month.toString().padStart(2,'0')}月${day.toString().padStart(2,'0')}日 (${weekdayName})`;
+        
+        // 倒计时逻辑
+        const curYear = now.getFullYear();
+        const curMonth = now.getMonth();
+        const curDay = now.getDate();
         const weekIdx = now.getDay();
-        const isWorking = getIsWorking(year, month, day);
+        const isWorking = getIsWorking(curYear, curMonth, curDay);
+        
         if (!isWorking) {
             countdownSpan.innerText = "⏸️ 今日休息";
             return;
         }
+        
         const cfg = weekConfig[weekIdx];
-        if (!cfg || !cfg.end) {
-            countdownSpan.innerText = "⚠️ 未設定下班時間";
+        if (!cfg || !cfg.start || !cfg.end) {
+            countdownSpan.innerText = "⚠️ 未設定上下班時間";
             return;
         }
+        
+        const startTimeStr = cfg.start;
         const endTimeStr = cfg.end;
-        if (!endTimeStr) {
-            countdownSpan.innerText = "⚠️ 未設定下班時間";
+        if (!startTimeStr || !endTimeStr) {
+            countdownSpan.innerText = "⚠️ 未設定上下班時間";
             return;
         }
+        
+        const [startHour, startMin] = startTimeStr.split(":").map(Number);
         const [endHour, endMin] = endTimeStr.split(":").map(Number);
-        const endTimestamp = new Date(year, month, day, endHour, endMin, 0).getTime();
+        const startTimestamp = new Date(curYear, curMonth, curDay, startHour, startMin, 0).getTime();
+        const endTimestamp = new Date(curYear, curMonth, curDay, endHour, endMin, 0).getTime();
         const nowTimestamp = now.getTime();
-        const diffMs = endTimestamp - nowTimestamp;
-        if (diffMs <= 0) {
+        
+        // 如果当前时间早于上班时间
+        if (nowTimestamp < startTimestamp) {
+            countdownSpan.innerText = "⏸️ 尚未開始";
+            return;
+        }
+        
+        // 如果已经过了下班时间
+        if (nowTimestamp >= endTimestamp) {
             countdownSpan.innerText = "✅ 已到達下班時間";
+            return;
+        }
+        
+        // 计算距离下班剩余时间
+        const diffMs = endTimestamp - nowTimestamp;
+        const diffMinutes = Math.floor(diffMs / 60000);
+        const hoursRemain = Math.floor(diffMinutes / 60);
+        const minutesRemain = diffMinutes % 60;
+        if (hoursRemain > 0) {
+            countdownSpan.innerText = `⏳ 距離下班：${hoursRemain}小時${minutesRemain}分鐘`;
         } else {
-            const diffMinutes = Math.floor(diffMs / 60000);
-            const hoursRemain = Math.floor(diffMinutes / 60);
-            const minutesRemain = diffMinutes % 60;
-            if (hoursRemain > 0) {
-                countdownSpan.innerText = `⏳ 距離下班：${hoursRemain}小時${minutesRemain}分鐘`;
-            } else {
-                countdownSpan.innerText = `⏳ 距離下班：${minutesRemain}分鐘`;
-            }
+            countdownSpan.innerText = `⏳ 距離下班：${minutesRemain}分鐘`;
         }
     }
     
@@ -992,7 +1019,6 @@
         }
         todayEarningsSpan.innerText = `$${todayTotal.toFixed(2)}`;
         
-        // 薪金詳情中的「本日薪金」顯示全天預期總額（最大值）
         const todayExpected = getDailyExpectedEarnings(realCurrentYear, realCurrentMonth, now.getDate(), computedHourlyRate);
         if (displayDailyRateSpan) displayDailyRateSpan.innerText = `$${todayExpected.toFixed(2)}`;
         
@@ -1097,7 +1123,7 @@
         let html = '<table class="calendar-table"><thead><tr>';
         const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
         weekdays.forEach(d => html += `<th>${d}</th>`);
-        html += '</tr></thead><tbody>';
+        html += '<tr></thead><tbody>';
         let date = 1;
         for (let i = 0; i < 6; i++) {
             html += '<tr>';
@@ -1116,7 +1142,7 @@
                                     <span class="date-num">${date}</span>
                                     <input type="checkbox" class="work-checkbox" data-year="${year}" data-month="${month}" data-day="${date}" ${checkedAttr}>
                                 </div>
-                             </td>`;
+                              </td>`;
                     date++;
                 }
             }
