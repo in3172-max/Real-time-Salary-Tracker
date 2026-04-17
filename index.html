@@ -3,6 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="theme-color" content="#0f2c3b">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="薪金追蹤器">
+    <link rel="manifest" href="data:application/manifest+json,{}" id="manifestLink">
     <title>實時薪金追蹤器 (By Ivan N)</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext x='50%25' y='50%25' font-size='80' text-anchor='middle' dy='.35em' fill='%23f5a623'%3E💰%3C/text%3E%3C/svg%3E">
     <style>
@@ -142,14 +147,14 @@
             overflow: hidden;
             box-shadow: 0 1px 4px rgba(0,0,0,0.05);
             table-layout: fixed;
-            min-width: 300px; /* 确保最小宽度，但手机端按比例缩放 */
+            min-width: 300px;
         }
         .calendar-table th, .calendar-table td {
             border: 1px solid #e2e8f0;
             text-align: center;
             vertical-align: middle;
             padding: 8px 2px;
-            width: 14.2857%; /* 100% / 7 */
+            width: 14.2857%;
             box-sizing: border-box;
         }
         .calendar-table th {
@@ -636,6 +641,78 @@
 </div>
 
 <script>
+    // ==================== PWA 安装与 Service Worker ====================
+    (function() {
+        // 生成 manifest 内容
+        const manifestData = {
+            name: "實時薪金追蹤器",
+            short_name: "薪金追蹤器",
+            description: "即時計算每月薪金及工時",
+            start_url: ".",
+            display: "standalone",
+            theme_color: "#0f2c3b",
+            background_color: "#0f2c3b",
+            icons: [
+                {
+                    src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext x='50%25' y='50%25' font-size='80' text-anchor='middle' dy='.35em' fill='%23f5a623'%3E💰%3C/text%3E%3C/svg%3E",
+                    sizes: "any",
+                    type: "image/svg+xml",
+                    purpose: "any maskable"
+                }
+            ]
+        };
+        const manifestBlob = new Blob([JSON.stringify(manifestData)], {type: 'application/manifest+json'});
+        const manifestURL = URL.createObjectURL(manifestBlob);
+        document.getElementById('manifestLink').setAttribute('href', manifestURL);
+        
+        // 注册 Service Worker (使用 Blob URL)
+        const swCode = `
+            const CACHE_NAME = 'salary-tracker-v1';
+            const urlsToCache = [
+                './',
+                location.pathname
+            ];
+            
+            self.addEventListener('install', event => {
+                event.waitUntil(
+                    caches.open(CACHE_NAME)
+                        .then(cache => cache.addAll(urlsToCache))
+                );
+                self.skipWaiting();
+            });
+            
+            self.addEventListener('fetch', event => {
+                event.respondWith(
+                    caches.match(event.request)
+                        .then(response => response || fetch(event.request))
+                );
+            });
+            
+            self.addEventListener('activate', event => {
+                event.waitUntil(clients.claim());
+            });
+        `;
+        const swBlob = new Blob([swCode], {type: 'application/javascript'});
+        const swURL = URL.createObjectURL(swBlob);
+        
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register(swURL).then(reg => {
+                console.log('Service Worker registered with scope:', reg.scope);
+            }).catch(err => {
+                console.log('Service Worker registration failed:', err);
+            });
+        }
+        
+        // 可选：监听 beforeinstallprompt 以提供自定义安装提示 (暂不干扰体验)
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            // 可以添加一个按钮来触发安装，但为了简洁，不额外增加UI
+        });
+    })();
+    
+    // ==================== 原有业务逻辑 (保持完整) ====================
     let weekConfig = [];
     let workOverrideMap = new Map();
     let unpaidRecords = [];
@@ -1131,7 +1208,7 @@
         let html = '<table class="calendar-table"><thead><tr>';
         const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
         weekdays.forEach(d => html += `<th>${d}</th>`);
-        html += '<tr></thead><tbody>';
+        html += '</tr></thead><tbody>';
         let date = 1;
         for (let i = 0; i < 6; i++) {
             html += '<tr>';
@@ -1150,7 +1227,7 @@
                                     <span class="date-num">${date}</span>
                                     <input type="checkbox" class="work-checkbox" data-year="${year}" data-month="${month}" data-day="${date}" ${checkedAttr}>
                                 </div>
-                               </td>`;
+                              </td>`;
                     date++;
                 }
             }
