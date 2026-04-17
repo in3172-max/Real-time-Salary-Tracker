@@ -20,10 +20,13 @@
             margin: 0;
             padding: 0;
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
         .app-container {
             width: 100%;
             background: transparent;
+            flex: 1;
         }
         .settings-panel {
             background: #ffffff;
@@ -88,15 +91,6 @@
             color: #1e2f3a;
             transform: scale(0.96);
         }
-        .install-btn {
-            background: #f5a623;
-            color: #1e2f3a;
-            margin-left: auto;
-        }
-        .install-btn:hover {
-            background: #ffcc66;
-            transform: scale(0.96);
-        }
         .work-hours-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -147,7 +141,6 @@
             margin: 12px 0;
             -webkit-overflow-scrolling: touch;
         }
-        /* 日历表格修复：固定列宽，确保7列完整显示 */
         .calendar-table {
             width: 100%;
             border-collapse: collapse;
@@ -434,16 +427,15 @@
             background: transparent;
             color: #f5a623;
         }
-        .copyright {
+        .copyright-footer {
             text-align: center;
-            font-size: 0.7rem;
             padding: 12px 16px;
-            background: rgba(0,0,0,0.1);
-            color: #ffffffaa;
-            margin-top: 16px;
-            border-radius: 30px;
+            font-size: 0.7rem;
+            color: #5a6e7c;
+            background: #f0f2f5;
+            border-top: 1px solid #dce3ec;
+            margin-top: 8px;
         }
-        /* 手机端优化 */
         @media (max-width: 640px) {
             .settings-panel {
                 padding: 12px 16px;
@@ -551,7 +543,7 @@
             .hide-title-btn {
                 font-size: 1rem;
             }
-            .copyright {
+            .copyright-footer {
                 font-size: 0.6rem;
                 padding: 8px 12px;
             }
@@ -568,7 +560,6 @@
                 <select id="yearSelect"></select>
                 <select id="monthSelect"></select>
             </div>
-            <button id="installPwaBtn" class="install-btn" style="display: none;">📲 安裝應用程式</button>
             <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                 <div style="font-size:0.75rem;">請勾選上班日</div>
                 <button id="toggleSaturdayBtn" style="background:#f5a623; color:#1e2f3a; padding:4px 10px;">一鍵勾選/反選星期六</button>
@@ -659,17 +650,15 @@
         <div class="coffee-link">
             ☕ Buy me a coffee · <a href="https://payme.hsbc/nannn" target="_blank" rel="noopener noreferrer">PAYME</a>
         </div>
-        <div class="copyright">
-            Copyright © 2026 Ivan N. All Rights Reserved.
-        </div>
     </div>
-    <footer style="display: none;"></footer>
+</div>
+<div class="copyright-footer">
+    copyright © 2026 Ivan N. All rights reserved.
 </div>
 
 <script>
-    // ==================== PWA 安装与 Service Worker ====================
+    // ==================== PWA ====================
     (function() {
-        // 生成 manifest 内容
         const manifestData = {
             name: "實時薪金追蹤器",
             short_name: "薪金追蹤器",
@@ -691,76 +680,28 @@
         const manifestURL = URL.createObjectURL(manifestBlob);
         document.getElementById('manifestLink').setAttribute('href', manifestURL);
         
-        // 注册 Service Worker (使用 Blob URL)
         const swCode = `
             const CACHE_NAME = 'salary-tracker-v1';
-            const urlsToCache = [
-                './',
-                location.pathname
-            ];
-            
+            const urlsToCache = ['./', location.pathname];
             self.addEventListener('install', event => {
-                event.waitUntil(
-                    caches.open(CACHE_NAME)
-                        .then(cache => cache.addAll(urlsToCache))
-                );
+                event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache)));
                 self.skipWaiting();
             });
-            
             self.addEventListener('fetch', event => {
-                event.respondWith(
-                    caches.match(event.request)
-                        .then(response => response || fetch(event.request))
-                );
+                event.respondWith(caches.match(event.request).then(response => response || fetch(event.request)));
             });
-            
             self.addEventListener('activate', event => {
                 event.waitUntil(clients.claim());
             });
         `;
         const swBlob = new Blob([swCode], {type: 'application/javascript'});
         const swURL = URL.createObjectURL(swBlob);
-        
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register(swURL).then(reg => {
-                console.log('Service Worker registered with scope:', reg.scope);
-            }).catch(err => {
-                console.log('Service Worker registration failed:', err);
-            });
-        }
-        
-        // PWA 安装按钮逻辑
-        let deferredPrompt;
-        const installBtn = document.getElementById('installPwaBtn');
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            if (installBtn) installBtn.style.display = 'inline-flex';
-        });
-        
-        if (installBtn) {
-            installBtn.addEventListener('click', async () => {
-                if (!deferredPrompt) return;
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                console.log(`User response to the install prompt: ${outcome}`);
-                deferredPrompt = null;
-                installBtn.style.display = 'none';
-            });
-        }
-        
-        // iOS 检测与提示 (iOS 不支持 beforeinstallprompt，通过检测显示提示)
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        if (isIOS && installBtn) {
-            installBtn.style.display = 'inline-flex';
-            installBtn.innerText = '📲 分享/安裝 (iOS)';
-            installBtn.addEventListener('click', () => {
-                alert("請點擊瀏覽器分享按鈕，然後選擇「加入主畫面」以安裝應用程式。");
-            });
+            navigator.serviceWorker.register(swURL).catch(err => console.log('SW registration failed:', err));
         }
     })();
     
-    // ==================== 原有业务逻辑 (保持完整，无修改，确保日历稳定) ====================
+    // ==================== 核心逻辑（已移除午休） ====================
     let weekConfig = [];
     let workOverrideMap = new Map();
     let unpaidRecords = [];
@@ -777,6 +718,7 @@
     
     function timeToMinutes(t) { if(!t) return 0; let [h,m]=t.split(":").map(Number); return h*60+m; }
     
+    // 全天工作小时数（从上班到下班，不扣除任何时间）
     function getDailyWorkHoursByConfig(weekIdx, isWorking) {
         if (!isWorking) return 0;
         const cfg = weekConfig[weekIdx];
@@ -784,15 +726,10 @@
         const startMin = timeToMinutes(cfg.start);
         const endMin = timeToMinutes(cfg.end);
         if (startMin >= endMin) return 0;
-        let totalMins = endMin - startMin;
-        const lunchStartMin = 12 * 60;
-        const lunchDurMin = (cfg.lunchHours || 0) * 60;
-        const lunchEndMin = lunchStartMin + lunchDurMin;
-        let lunchOverlap = Math.max(0, Math.min(endMin, lunchEndMin) - Math.max(startMin, lunchStartMin));
-        let workMins = totalMins - lunchOverlap;
-        return workMins > 0 ? workMins / 60 : 0;
+        return (endMin - startMin) / 60;
     }
     
+    // 工作区间：单一连续区间
     function getWorkIntervalsForDateByConfig(weekIdx, isWorking) {
         if (!isWorking) return [];
         const cfg = weekConfig[weekIdx];
@@ -800,15 +737,7 @@
         let startMin = timeToMinutes(cfg.start);
         let endMin = timeToMinutes(cfg.end);
         if (startMin >= endMin) return [];
-        const lunchStartMin = 12 * 60;
-        const lunchDurMin = (cfg.lunchHours || 0) * 60;
-        const lunchEndMin = lunchStartMin + lunchDurMin;
-        let intervals = [];
-        let firstEnd = Math.min(endMin, lunchStartMin);
-        if (firstEnd > startMin) intervals.push([startMin, firstEnd]);
-        let secondStart = Math.max(startMin, lunchEndMin);
-        if (secondStart < endMin) intervals.push([secondStart, endMin]);
-        return intervals;
+        return [[startMin, endMin]];
     }
     
     let currentViewYear = new Date().getFullYear();
@@ -817,14 +746,13 @@
     let monthlySalaryHKD = 20000;
     let computedHourlyRate = 0;
     let originalHourlyRate = 0;
-    let computedDailyAvg = 0;
     let originalTotalWorkHours = 0;
     let totalWorkHoursWithUnpaid = 0;
     let realCurrentYear = 2025, realCurrentMonth = 0;
     let updateInterval = null;
-    
     let isAmountHidden = false;
     
+    // DOM elements
     const settingsPanel = document.getElementById('settingsPanel');
     const realTimeArea = document.getElementById('realTimeArea');
     const yearSelect = document.getElementById('yearSelect');
@@ -883,17 +811,10 @@
     
     function saveState() {
         const overrideObj = {};
-        for (let [key, value] of workOverrideMap.entries()) {
-            overrideObj[key] = value;
-        }
+        for (let [key, value] of workOverrideMap.entries()) overrideObj[key] = value;
         const state = {
-            weekConfig: weekConfig,
-            workOverrideMap: overrideObj,
-            unpaidRecords: unpaidRecords,
-            monthlySalaryHKD: monthlySalaryHKD,
-            currentViewYear: currentViewYear,
-            currentViewMonth: currentViewMonth,
-            isAmountHidden: isAmountHidden
+            weekConfig, workOverrideMap: overrideObj, unpaidRecords, monthlySalaryHKD,
+            currentViewYear, currentViewMonth, isAmountHidden
         };
         localStorage.setItem('hkSalaryCalculator', JSON.stringify(state));
     }
@@ -906,9 +827,7 @@
             if (state.weekConfig) weekConfig = state.weekConfig;
             if (state.workOverrideMap) {
                 workOverrideMap.clear();
-                for (let [key, value] of Object.entries(state.workOverrideMap)) {
-                    workOverrideMap.set(key, value);
-                }
+                for (let [key, value] of Object.entries(state.workOverrideMap)) workOverrideMap.set(key, value);
             }
             if (state.unpaidRecords) unpaidRecords = state.unpaidRecords;
             if (state.monthlySalaryHKD) monthlySalaryHKD = state.monthlySalaryHKD;
@@ -918,21 +837,11 @@
             monthlySalaryInput.value = monthlySalaryHKD;
             renderWeekConfigUI();
             return true;
-        } catch(e) {
-            console.warn("讀取儲存資料失敗", e);
-            return false;
-        }
+        } catch(e) { return false; }
     }
     
-    function autoSave() {
-        saveState();
-    }
-    
-    function toggleAmountVisibility() {
-        isAmountHidden = !isAmountHidden;
-        autoSave();
-        updateRealTimeEarnings();
-    }
+    function autoSave() { saveState(); }
+    function toggleAmountVisibility() { isAmountHidden = !isAmountHidden; autoSave(); updateRealTimeEarnings(); }
     
     function getDailyExpectedEarnings(year, month, day, hourlyRate) {
         const working = getIsWorking(year, month, day);
@@ -944,8 +853,8 @@
     function initWeekConfig() {
         let cfg = [];
         for(let i=0;i<7;i++) {
-            if(i===0) cfg.push({ start: "", end: "", lunchHours: 1 });
-            else cfg.push({ start: "09:00", end: "18:00", lunchHours: 1 });
+            if(i===0) cfg.push({ start: "", end: "" });
+            else cfg.push({ start: "09:00", end: "18:00" });
         }
         return cfg;
     }
@@ -962,18 +871,12 @@
                 <div class="day-name">${dayName}</div>
                 <div class="time-row"><label>⏰ 上班時間</label><input type="time" class="work-start" step="900" value="${cfg.start||''}"></div>
                 <div class="time-row"><label>⏰ 下班時間</label><input type="time" class="work-end" step="900" value="${cfg.end||''}"></div>
-                <div class="time-row"><label>🍱 午休時數</label><input type="number" class="lunch-hours" step="0.25" min="0" max="3" value="${cfg.lunchHours}"></div>
             `;
             weekdayContainer.appendChild(card);
             const startInp = card.querySelector('.work-start');
             const endInp = card.querySelector('.work-end');
-            const lunchInp = card.querySelector('.lunch-hours');
             const updateCfg = () => {
-                weekConfig[realIdx] = {
-                    start: startInp.value,
-                    end: endInp.value,
-                    lunchHours: parseFloat(lunchInp.value) || 0
-                };
+                weekConfig[realIdx] = { start: startInp.value, end: endInp.value };
                 if(realTimeEnabled) {
                     refreshRatesAndTotalHours();
                     updateRealTimeEarnings();
@@ -984,7 +887,6 @@
             };
             startInp.addEventListener('change', updateCfg);
             endInp.addEventListener('change', updateCfg);
-            lunchInp.addEventListener('change', updateCfg);
         }
     }
     
@@ -1002,7 +904,7 @@
     function getUnpaidHoursInMonth(year, month) {
         let total = 0;
         for(let rec of unpaidRecords) {
-            const [y,m,d] = rec.dateStr.split('-').map(Number);
+            const [y,m] = rec.dateStr.split('-').map(Number);
             if(y === year && (m-1) === month) total += rec.hours;
         }
         return total;
@@ -1018,20 +920,13 @@
         
         if(originalTotalWorkHours > 0 && monthlySalaryHKD > 0) {
             originalHourlyRate = monthlySalaryHKD / originalTotalWorkHours;
-        } else {
-            originalHourlyRate = 0;
-        }
+        } else { originalHourlyRate = 0; }
         
         if(totalWorkHoursWithUnpaid <= 0 || monthlySalaryHKD <= 0) {
             computedHourlyRate = 0;
         } else {
             computedHourlyRate = monthlySalaryHKD / totalWorkHoursWithUnpaid;
         }
-        
-        let workDaysCount = 0;
-        const days = new Date(realCurrentYear, realCurrentMonth+1, 0).getDate();
-        for(let d=1; d<=days; d++) if(getIsWorking(realCurrentYear, realCurrentMonth, d)) workDaysCount++;
-        computedDailyAvg = workDaysCount>0 ? monthlySalaryHKD / workDaysCount : 0;
         
         if(realTimeEnabled) {
             rateInfoDiv.innerHTML = `📆 本月工時(含無薪): ${totalWorkHoursWithUnpaid.toFixed(2)} 小時 | 基本工時 ${originalTotalWorkHours.toFixed(2)} 小時`;
@@ -1044,8 +939,7 @@
     
     function getAccumulatedAndTodayEarnings(nowDate, year, month, hourlyRate) {
         if(hourlyRate === 0) return { monthTotal: 0, todayTotal: 0 };
-        let totalSeconds = 0;
-        let todaySeconds = 0;
+        let totalSeconds = 0, todaySeconds = 0;
         const todayDate = nowDate.getDate();
         const currentTimestamp = nowDate.getTime();
         const daysInMonth = new Date(year, month+1, 0).getDate();
@@ -1053,10 +947,8 @@
             const working = getIsWorking(year, month, d);
             const weekIdx = new Date(year, month, d).getDay();
             const intervals = getWorkIntervalsForDateByConfig(weekIdx, working);
-            if(intervals.length === 0) continue;
             for(let iv of intervals) {
-                let startMin = iv[0];
-                let endMin = iv[1];
+                let startMin = iv[0], endMin = iv[1];
                 let ivStartMs = new Date(year, month, d, Math.floor(startMin/60), startMin%60, 0).getTime();
                 let ivEndMs = new Date(year, month, d, Math.floor(endMin/60), endMin%60, 0).getTime();
                 let effectiveEnd = Math.min(ivEndMs, currentTimestamp);
@@ -1073,67 +965,28 @@
     function updateClockAndCountdown() {
         if (!realTimeEnabled) return;
         const now = new Date();
-        const hours = now.getHours().toString().padStart(2,'0');
-        const minutes = now.getMinutes().toString().padStart(2,'0');
-        const seconds = now.getSeconds().toString().padStart(2,'0');
-        realTimeClockSpan.innerText = `${hours}:${minutes}:${seconds}`;
-        
-        const year = now.getFullYear();
-        const month = now.getMonth() + 1;
-        const day = now.getDate();
+        realTimeClockSpan.innerText = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+        const year = now.getFullYear(), month = now.getMonth()+1, day = now.getDate();
         const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
-        const weekdayName = weekdays[now.getDay()];
-        dateLabelSpan.innerHTML = `📆 ${year}年${month.toString().padStart(2,'0')}月${day.toString().padStart(2,'0')}日 (${weekdayName})`;
+        dateLabelSpan.innerHTML = `📆 ${year}年${month.toString().padStart(2,'0')}月${day.toString().padStart(2,'0')}日 (${weekdays[now.getDay()]})`;
         
-        const curYear = now.getFullYear();
-        const curMonth = now.getMonth();
-        const curDay = now.getDate();
+        const curYear = now.getFullYear(), curMonth = now.getMonth(), curDay = now.getDate();
         const weekIdx = now.getDay();
         const isWorking = getIsWorking(curYear, curMonth, curDay);
-        
-        if (!isWorking) {
-            countdownSpan.innerText = "⏸️ 今日休息";
-            return;
-        }
-        
+        if (!isWorking) { countdownSpan.innerText = "⏸️ 今日休息"; return; }
         const cfg = weekConfig[weekIdx];
-        if (!cfg || !cfg.start || !cfg.end) {
-            countdownSpan.innerText = "⚠️ 未設定上下班時間";
-            return;
-        }
-        
-        const startTimeStr = cfg.start;
-        const endTimeStr = cfg.end;
-        if (!startTimeStr || !endTimeStr) {
-            countdownSpan.innerText = "⚠️ 未設定上下班時間";
-            return;
-        }
-        
-        const [startHour, startMin] = startTimeStr.split(":").map(Number);
-        const [endHour, endMin] = endTimeStr.split(":").map(Number);
-        const startTimestamp = new Date(curYear, curMonth, curDay, startHour, startMin, 0).getTime();
-        const endTimestamp = new Date(curYear, curMonth, curDay, endHour, endMin, 0).getTime();
-        const nowTimestamp = now.getTime();
-        
-        if (nowTimestamp < startTimestamp) {
-            countdownSpan.innerText = "⏸️ 尚未開始";
-            return;
-        }
-        
-        if (nowTimestamp >= endTimestamp) {
-            countdownSpan.innerText = "✅ 已到達下班時間";
-            return;
-        }
-        
-        const diffMs = endTimestamp - nowTimestamp;
-        const diffMinutes = Math.floor(diffMs / 60000);
-        const hoursRemain = Math.floor(diffMinutes / 60);
-        const minutesRemain = diffMinutes % 60;
-        if (hoursRemain > 0) {
-            countdownSpan.innerText = `⏳ 距離下班：${hoursRemain}小時${minutesRemain}分鐘`;
-        } else {
-            countdownSpan.innerText = `⏳ 距離下班：${minutesRemain}分鐘`;
-        }
+        if (!cfg || !cfg.start || !cfg.end) { countdownSpan.innerText = "⚠️ 未設定上下班時間"; return; }
+        const [startHour, startMin] = cfg.start.split(":").map(Number);
+        const [endHour, endMin] = cfg.end.split(":").map(Number);
+        const startTs = new Date(curYear, curMonth, curDay, startHour, startMin, 0).getTime();
+        const endTs = new Date(curYear, curMonth, curDay, endHour, endMin, 0).getTime();
+        const nowTs = now.getTime();
+        if (nowTs < startTs) { countdownSpan.innerText = "⏸️ 尚未開始"; return; }
+        if (nowTs >= endTs) { countdownSpan.innerText = "✅ 已到達下班時間"; return; }
+        const diffMs = endTs - nowTs;
+        const diffMins = Math.floor(diffMs / 60000);
+        const hrs = Math.floor(diffMins / 60), mins = diffMins % 60;
+        countdownSpan.innerText = hrs > 0 ? `⏳ 距離下班：${hrs}小時${mins}分鐘` : `⏳ 距離下班：${mins}分鐘`;
     }
     
     function updateRealTimeEarnings() {
@@ -1142,30 +995,21 @@
         const curYear = now.getFullYear(), curMonth = now.getMonth();
         if(curYear !== realCurrentYear || curMonth !== realCurrentMonth) refreshRatesAndTotalHours();
         const { monthTotal, todayTotal } = getAccumulatedAndTodayEarnings(now, realCurrentYear, realCurrentMonth, computedHourlyRate);
-        
-        const originalAmountStr = `$${monthTotal.toFixed(2)}`;
-        if (isAmountHidden) {
-            const hiddenStr = '*'.repeat(originalAmountStr.length);
-            runningSpan.innerText = hiddenStr;
-        } else {
-            runningSpan.innerText = originalAmountStr;
-        }
+        const originalStr = `$${monthTotal.toFixed(2)}`;
+        runningSpan.innerText = isAmountHidden ? '*'.repeat(originalStr.length) : originalStr;
         todayEarningsSpan.innerText = `$${todayTotal.toFixed(2)}`;
-        
         const todayExpected = getDailyExpectedEarnings(realCurrentYear, realCurrentMonth, now.getDate(), computedHourlyRate);
         if (displayDailyRateSpan) displayDailyRateSpan.innerText = `$${todayExpected.toFixed(2)}`;
-        
         const totalDays = new Date(realCurrentYear, realCurrentMonth+1, 0).getDate();
-        const totalSecInMonth = totalDays * 86400;
+        const totalSec = totalDays * 86400;
         const nowSec = (now - new Date(realCurrentYear, realCurrentMonth,1)) / 1000;
-        timeProgressSpan.innerHTML = `⏱️ 本月進度 ${Math.min(100,(nowSec/totalSecInMonth*100)).toFixed(1)}% | 每秒增值 ≈ $${(computedHourlyRate/3600).toFixed(6)}`;
-        
+        timeProgressSpan.innerHTML = `⏱️ 本月進度 ${Math.min(100,(nowSec/totalSec*100)).toFixed(1)}% | 每秒增值 ≈ $${(computedHourlyRate/3600).toFixed(6)}`;
         updateClockAndCountdown();
     }
     
     function startRealTimeLoop() {
         if(updateInterval) clearInterval(updateInterval);
-        updateInterval = setInterval(() => updateRealTimeEarnings(), 100);
+        updateInterval = setInterval(updateRealTimeEarnings, 100);
         updateRealTimeEarnings();
     }
     
@@ -1174,9 +1018,7 @@
         if(isNaN(monthlySalaryHKD)) monthlySalaryHKD = 0;
         realTimeEnabled = true;
         refreshRatesAndTotalHours();
-        if(originalTotalWorkHours === 0 && monthlySalaryHKD>0) {
-            if(rateInfoDiv) rateInfoDiv.innerHTML += " ⚠️ 本月原始工時為0，請檢查上班日設定";
-        }
+        if(originalTotalWorkHours === 0 && monthlySalaryHKD>0) rateInfoDiv.innerHTML += " ⚠️ 本月原始工時為0，請檢查上班日設定";
         settingsPanel.classList.add('collapsed');
         realTimeArea.style.display = "block";
         startRealTimeLoop();
@@ -1219,63 +1061,44 @@
     }
     
     function toggleSaturday() {
-        const year = currentViewYear;
-        const month = currentViewMonth;
+        const year = currentViewYear, month = currentViewMonth;
         const daysInMonth = new Date(year, month+1, 0).getDate();
         const saturdays = [];
-        for (let d=1; d<=daysInMonth; d++) {
-            const week = new Date(year, month, d).getDay();
-            if (week === 6) {
-                saturdays.push(d);
-            }
-        }
+        for (let d=1; d<=daysInMonth; d++) if(new Date(year, month, d).getDay() === 6) saturdays.push(d);
         if (saturdays.length === 0) return;
         let allWorking = true;
-        for (let d of saturdays) {
-            if (!getIsWorking(year, month, d)) {
-                allWorking = false;
-                break;
-            }
-        }
+        for (let d of saturdays) if (!getIsWorking(year, month, d)) { allWorking = false; break; }
         const target = !allWorking;
         for (let d of saturdays) {
             const key = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
             workOverrideMap.set(key, target);
         }
         renderCalendar(year, month);
-        if (realTimeEnabled && year === realCurrentYear && month === realCurrentMonth) {
-            refreshRatesAndTotalHours();
-            updateRealTimeEarnings();
-        }
+        if (realTimeEnabled && year === realCurrentYear && month === realCurrentMonth) { refreshRatesAndTotalHours(); updateRealTimeEarnings(); }
         autoSave();
     }
     
     function renderCalendar(year, month) {
         const firstDay = new Date(year, month, 1).getDay();
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const daysInMonth = new Date(year, month+1, 0).getDate();
         let html = '<table class="calendar-table"><thead><tr>';
-        const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
-        weekdays.forEach(d => html += `<th>${d}</th>`);
+        ['日','一','二','三','四','五','六'].forEach(d => html += `<th>${d}</th>`);
         html += '</tr></thead><tbody>';
         let date = 1;
-        for (let i = 0; i < 6; i++) {
+        for (let i=0; i<6; i++) {
             html += '<tr>';
-            for (let j = 0; j < 7; j++) {
-                if (i === 0 && j < firstDay) {
-                    html += '<td class="empty"></td>';
-                } else if (date > daysInMonth) {
-                    html += '<td class="empty"></td>';
-                } else {
+            for (let j=0; j<7; j++) {
+                if (i===0 && j<firstDay) html += '<td class="empty"><td>';
+                else if (date > daysInMonth) html += '<td class="empty"></td>';
+                else {
                     const working = getIsWorking(year, month, date);
-                    const today = new Date();
-                    const isToday = (today.getFullYear() === year && today.getMonth() === month && today.getDate() === date);
-                    const checkedAttr = working ? 'checked' : '';
+                    const isToday = (new Date().getFullYear()===year && new Date().getMonth()===month && new Date().getDate()===date);
                     html += `<td class="${isToday ? 'today-badge' : ''}">
                                 <div class="date-cell">
                                     <span class="date-num">${date}</span>
-                                    <input type="checkbox" class="work-checkbox" data-year="${year}" data-month="${month}" data-day="${date}" ${checkedAttr}>
+                                    <input type="checkbox" class="work-checkbox" data-year="${year}" data-month="${month}" data-day="${date}" ${working ? 'checked' : ''}>
                                 </div>
-                              </td>`;
+                             </td>`;
                     date++;
                 }
             }
@@ -1285,16 +1108,11 @@
         html += '</tbody></table>';
         calendarDiv.innerHTML = html;
         document.querySelectorAll('.work-checkbox').forEach(cb => {
-            cb.addEventListener('change', (e) => {
-                const y = parseInt(cb.dataset.year);
-                const m = parseInt(cb.dataset.month);
-                const d = parseInt(cb.dataset.day);
+            cb.addEventListener('change', () => {
+                const y = parseInt(cb.dataset.year), m = parseInt(cb.dataset.month), d = parseInt(cb.dataset.day);
                 const key = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
                 workOverrideMap.set(key, cb.checked);
-                if (realTimeEnabled && y === realCurrentYear && m === realCurrentMonth) {
-                    refreshRatesAndTotalHours();
-                    updateRealTimeEarnings();
-                }
+                if (realTimeEnabled && y === realCurrentYear && m === realCurrentMonth) { refreshRatesAndTotalHours(); updateRealTimeEarnings(); }
                 renderCalendar(currentViewYear, currentViewMonth);
                 autoSave();
             });
@@ -1313,15 +1131,13 @@
         yearSelect.innerHTML = '';
         for(let y=currentYear-1; y<=2046; y++) {
             let opt = document.createElement('option');
-            opt.value = y;
-            opt.innerText = y;
+            opt.value = y; opt.innerText = y;
             yearSelect.appendChild(opt);
         }
         monthSelect.innerHTML = '';
         for(let m=0; m<12; m++) {
             let opt = document.createElement('option');
-            opt.value = m;
-            opt.innerText = `${m+1}月`;
+            opt.value = m; opt.innerText = `${m+1}月`;
             monthSelect.appendChild(opt);
         }
     }
@@ -1353,26 +1169,14 @@
         saveBtn.addEventListener('click', () => {
             const newDate = editDiv.querySelector('#editDate').value;
             const newHours = parseFloat(editDiv.querySelector('#editHours').value);
-            if (!newDate || !/^\d{4}-\d{2}-\d{2}$/.test(newDate)) {
-                showUnpaidError("日期格式錯誤");
-                return;
-            }
-            if (isNaN(newHours) || newHours <= 0) {
-                showUnpaidError("請輸入正數時數");
-                return;
-            }
-            rec.dateStr = newDate;
-            rec.hours = newHours;
+            if (!newDate || !/^\d{4}-\d{2}-\d{2}$/.test(newDate)) { showUnpaidError("日期格式錯誤"); return; }
+            if (isNaN(newHours) || newHours <= 0) { showUnpaidError("請輸入正數時數"); return; }
+            rec.dateStr = newDate; rec.hours = newHours;
             renderUnpaidList();
-            if(realTimeEnabled) {
-                refreshRatesAndTotalHours();
-                updateRealTimeEarnings();
-            }
+            if(realTimeEnabled) { refreshRatesAndTotalHours(); updateRealTimeEarnings(); }
             autoSave();
         });
-        cancelBtn.addEventListener('click', () => {
-            renderUnpaidList();
-        });
+        cancelBtn.addEventListener('click', () => renderUnpaidList());
     }
     
     function renderUnpaidList() {
@@ -1382,35 +1186,20 @@
         } else {
             let html = '';
             unpaidRecords.forEach((rec, idx) => {
-                html += `
-                    <div class="unpaid-item" data-idx="${idx}">
-                        <span>📅 ${rec.dateStr} &nbsp; ⏱️ ${rec.hours.toFixed(2)} 小時</span>
-                        <div class="unpaid-actions">
-                            <button class="edit-unpaid" data-idx="${idx}" style="font-size:1rem;">✏️</button>
-                            <button class="delete-unpaid" data-idx="${idx}" style="font-size:1rem;">➖</button>
-                        </div>
-                    </div>
-                `;
+                html += `<div class="unpaid-item" data-idx="${idx}">
+                            <span>📅 ${rec.dateStr} &nbsp; ⏱️ ${rec.hours.toFixed(2)} 小時</span>
+                            <div class="unpaid-actions">
+                                <button class="edit-unpaid" data-idx="${idx}" style="font-size:1rem;">✏️</button>
+                                <button class="delete-unpaid" data-idx="${idx}" style="font-size:1rem;">➖</button>
+                            </div>
+                         </div>`;
             });
             unpaidListContainer.innerHTML = html;
             document.querySelectorAll('.edit-unpaid').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const idx = parseInt(btn.dataset.idx);
-                    const itemDiv = btn.closest('.unpaid-item');
-                    startEditRecord(idx, itemDiv);
-                });
+                btn.addEventListener('click', (e) => { const idx = parseInt(btn.dataset.idx); startEditRecord(idx, btn.closest('.unpaid-item')); });
             });
             document.querySelectorAll('.delete-unpaid').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const idx = parseInt(btn.dataset.idx);
-                    unpaidRecords.splice(idx, 1);
-                    renderUnpaidList();
-                    if(realTimeEnabled) {
-                        refreshRatesAndTotalHours();
-                        updateRealTimeEarnings();
-                    }
-                    autoSave();
-                });
+                btn.addEventListener('click', (e) => { const idx = parseInt(btn.dataset.idx); unpaidRecords.splice(idx,1); renderUnpaidList(); if(realTimeEnabled) { refreshRatesAndTotalHours(); updateRealTimeEarnings(); } autoSave(); });
             });
         }
         updateUnpaidStatsDisplay();
@@ -1421,37 +1210,25 @@
         const unpaidThisMonth = getUnpaidHoursInMonth(realCurrentYear, realCurrentMonth);
         unpaidStatsSpan.innerHTML = `本月無薪工時: ${unpaidThisMonth.toFixed(2)} 小時`;
         let originalHourlyForWorth = 0;
-        if(originalTotalWorkHours > 0 && monthlySalaryHKD > 0) {
-            originalHourlyForWorth = monthlySalaryHKD / originalTotalWorkHours;
-        }
+        if(originalTotalWorkHours > 0 && monthlySalaryHKD > 0) originalHourlyForWorth = monthlySalaryHKD / originalTotalWorkHours;
         const originalWorth = unpaidThisMonth * originalHourlyForWorth;
         if(unpaidOriginalWorthSpan) unpaidOriginalWorthSpan.innerHTML = `若按基本時薪計算: $${originalWorth.toFixed(2)}`;
     }
     
     function addUnpaidRecord() {
         const dateStr = unpaidDateInput.value;
-        if(!dateStr) {
-            showUnpaidError("請選擇日期");
-            return;
-        }
+        if(!dateStr) { showUnpaidError("請選擇日期"); return; }
         let hours = parseFloat(unpaidHoursInput.value);
-        if(isNaN(hours) || hours <= 0) {
-            showUnpaidError("請輸入有效的大於0的時數");
-            return;
-        }
+        if(isNaN(hours) || hours <= 0) { showUnpaidError("請輸入有效的大於0的時數"); return; }
         unpaidRecords.push({ dateStr, hours });
         renderUnpaidList();
-        if(realTimeEnabled) {
-            refreshRatesAndTotalHours();
-            updateRealTimeEarnings();
-        }
+        if(realTimeEnabled) { refreshRatesAndTotalHours(); updateRealTimeEarnings(); }
         autoSave();
     }
     
     function init() {
         populateYearSelect();
         const hasSaved = loadState();
-        
         if (!hasSaved) {
             weekConfig = initWeekConfig();
             renderWeekConfigUI();
@@ -1462,11 +1239,9 @@
             refreshRatesAndTotalHours();
             isAmountHidden = false;
         }
-        
         yearSelect.value = currentViewYear;
         monthSelect.value = currentViewMonth;
         renderCalendar(currentViewYear, currentViewMonth);
-        
         if (hasSaved) {
             realTimeEnabled = true;
             refreshRatesAndTotalHours();
@@ -1479,7 +1254,6 @@
             settingsPanel.classList.remove('collapsed');
             realTimeArea.style.display = "none";
         }
-        
         salaryDetailsExpanded = false;
         updateSalaryDetailsVisibility();
         
@@ -1490,26 +1264,15 @@
         toggleSalaryBtn.addEventListener('click', toggleSalaryDetails);
         yearSelect.addEventListener('change', updateCalendarFromPicker);
         monthSelect.addEventListener('change', updateCalendarFromPicker);
-        if(addUnpaidBtnInline) addUnpaidBtnInline.addEventListener('click', addUnpaidRecord);
-        if(toggleHideAmountBtn) toggleHideAmountBtn.addEventListener('click', toggleAmountVisibility);
-        if(unpaidDateInput) {
-            const today = new Date();
-            const yyyy = today.getFullYear();
-            const mm = String(today.getMonth()+1).padStart(2,'0');
-            const dd = String(today.getDate()).padStart(2,'0');
-            unpaidDateInput.value = `${yyyy}-${mm}-${dd}`;
-        }
-        if(unpaidHoursInput) unpaidHoursInput.value = 1;
-        
+        addUnpaidBtnInline.addEventListener('click', addUnpaidRecord);
+        toggleHideAmountBtn.addEventListener('click', toggleAmountVisibility);
+        const today = new Date();
+        unpaidDateInput.value = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+        unpaidHoursInput.value = 1;
         monthlySalaryInput.addEventListener('change', () => {
             monthlySalaryHKD = parseFloat(monthlySalaryInput.value);
             if(isNaN(monthlySalaryHKD)) monthlySalaryHKD = 0;
-            if(realTimeEnabled) {
-                refreshRatesAndTotalHours();
-                updateRealTimeEarnings();
-            } else {
-                refreshRatesAndTotalHours();
-            }
+            if(realTimeEnabled) { refreshRatesAndTotalHours(); updateRealTimeEarnings(); } else { refreshRatesAndTotalHours(); }
             autoSave();
         });
     }
