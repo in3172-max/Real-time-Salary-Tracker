@@ -132,6 +132,7 @@
             overflow-x: auto;
             margin: 12px 0;
         }
+        /* 修复日历错位：确保表格稳定，每个单元格内容垂直居中，不换行 */
         .calendar-table {
             width: 100%;
             border-collapse: collapse;
@@ -139,23 +140,37 @@
             border-radius: 20px;
             overflow: hidden;
             box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            table-layout: fixed;
+            min-width: 500px;
         }
         .calendar-table th, .calendar-table td {
             border: 1px solid #e2e8f0;
-            padding: 8px 4px;
+            padding: 8px 2px;
             text-align: center;
             vertical-align: middle;
             font-size: 0.75rem;
         }
+        .calendar-table td {
+            padding: 6px 2px;
+        }
+        .date-cell {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
         .date-num {
             font-weight: 700;
-            display: inline-block;
-            margin-right: 4px;
+            font-size: 0.85rem;
+        }
+        .calendar-table input[type="checkbox"] {
+            margin: 0;
+            transform: scale(1);
+            vertical-align: middle;
         }
         .today-badge {
             background: #f5a62330;
-            border-radius: 40px;
-            font-weight: bold;
         }
         .real-time-number {
             font-size: 2.2rem;
@@ -294,6 +309,7 @@
             display: flex;
             justify-content: flex-end;
             margin-bottom: 8px;
+            gap: 12px;
         }
         .gear-btn {
             background: transparent !important;
@@ -359,6 +375,42 @@
         .toggle-salary-btn:hover {
             background: rgba(255,255,255,0.3);
         }
+        /* 标题行：文字与按钮紧贴 */
+        .monthly-header {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 6px;
+            gap: 6px;
+        }
+        .monthly-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .hide-title-btn {
+            background: transparent;
+            border: none;
+            font-size: 1.2rem;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 0;
+            margin: 0;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            line-height: 1;
+            opacity: 0.8;
+            transition: 0.2s;
+        }
+        .hide-title-btn:hover {
+            opacity: 1;
+            transform: none;
+            background: transparent;
+            color: #f5a623;
+        }
         @media (max-width: 640px) {
             .settings-panel {
                 padding: 12px 16px;
@@ -402,7 +454,7 @@
             }
             .real-time-number {
                 font-size: 1.8rem;
-                padding: 4px 12px;
+                padding: 4px 16px;
             }
             .daily-earnings {
                 font-size: 0.9rem;
@@ -413,7 +465,6 @@
             .salary-info-value {
                 font-size: 1rem;
             }
-            /* 优化无薪工时添加行：手机不换行，紧凑排列 */
             .unpaid-add-row {
                 flex-wrap: nowrap;
                 padding: 6px 8px;
@@ -456,6 +507,12 @@
             .gear-btn {
                 font-size: 1.8rem !important;
             }
+            .monthly-title {
+                font-size: 1rem;
+            }
+            .hide-title-btn {
+                font-size: 1rem;
+            }
         }
     </style>
 </head>
@@ -496,10 +553,16 @@
             <div class="real-time-clock" id="realTimeClock">--:--:--</div>
             <div class="countdown-timer" id="countdownToOff">計算中...</div>
         </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
-            <div><span style="font-size:1.2rem; font-weight:600;">💰 本月已賺取薪金</span></div>
+        <!-- 标题行：文字与按钮紧贴 -->
+        <div class="monthly-header">
+            <span class="monthly-title">
+                💰 本月已賺取薪金
+                <button id="toggleHideAmountBtn" class="hide-title-btn" title="隱藏/顯示金額">👁️‍🗨️</button>
+            </span>
         </div>
-        <div class="real-time-number" id="runningEarnings">$0.00</div>
+        <div class="earnings-row">
+            <div class="real-time-number" id="runningEarnings">$0.00</div>
+        </div>
         <div class="daily-earnings">
             💰 <strong>本日已賺取薪金</strong>    <span id="todayEarnings" style="font-size:1.6rem; font-weight:800;">$0.00</span>
         </div>
@@ -621,6 +684,8 @@
     let realCurrentYear = 2025, realCurrentMonth = 0;
     let updateInterval = null;
     
+    let isAmountHidden = false;
+    
     const settingsPanel = document.getElementById('settingsPanel');
     const realTimeArea = document.getElementById('realTimeArea');
     const yearSelect = document.getElementById('yearSelect');
@@ -651,6 +716,7 @@
     const displayOriginalHourlyRateSpan = document.getElementById('displayOriginalHourlyRate');
     const realTimeClockSpan = document.getElementById('realTimeClock');
     const countdownSpan = document.getElementById('countdownToOff');
+    const toggleHideAmountBtn = document.getElementById('toggleHideAmountBtn');
     
     let salaryDetailsExpanded = false;
     function updateSalaryDetailsVisibility() {
@@ -686,7 +752,8 @@
             unpaidRecords: unpaidRecords,
             monthlySalaryHKD: monthlySalaryHKD,
             currentViewYear: currentViewYear,
-            currentViewMonth: currentViewMonth
+            currentViewMonth: currentViewMonth,
+            isAmountHidden: isAmountHidden
         };
         localStorage.setItem('hkSalaryCalculator', JSON.stringify(state));
     }
@@ -707,7 +774,7 @@
             if (state.monthlySalaryHKD) monthlySalaryHKD = state.monthlySalaryHKD;
             if (state.currentViewYear) currentViewYear = state.currentViewYear;
             if (state.currentViewMonth) currentViewMonth = state.currentViewMonth;
-            
+            if (typeof state.isAmountHidden === 'boolean') isAmountHidden = state.isAmountHidden;
             monthlySalaryInput.value = monthlySalaryHKD;
             renderWeekConfigUI();
             return true;
@@ -719,6 +786,20 @@
     
     function autoSave() {
         saveState();
+    }
+    
+    function toggleAmountVisibility() {
+        isAmountHidden = !isAmountHidden;
+        autoSave();
+        updateRealTimeEarnings();
+    }
+    
+    // 計算某一天的全天預期薪金（最大值）
+    function getDailyExpectedEarnings(year, month, day, hourlyRate) {
+        const working = getIsWorking(year, month, day);
+        const weekIdx = new Date(year, month, day).getDay();
+        const workHours = getDailyWorkHoursByConfig(weekIdx, working);
+        return workHours * hourlyRate;
     }
     
     function initWeekConfig() {
@@ -901,9 +982,19 @@
         const curYear = now.getFullYear(), curMonth = now.getMonth();
         if(curYear !== realCurrentYear || curMonth !== realCurrentMonth) refreshRatesAndTotalHours();
         const { monthTotal, todayTotal } = getAccumulatedAndTodayEarnings(now, realCurrentYear, realCurrentMonth, computedHourlyRate);
-        runningSpan.innerText = `$${monthTotal.toFixed(2)}`;
+        
+        const originalAmountStr = `$${monthTotal.toFixed(2)}`;
+        if (isAmountHidden) {
+            const hiddenStr = '*'.repeat(originalAmountStr.length);
+            runningSpan.innerText = hiddenStr;
+        } else {
+            runningSpan.innerText = originalAmountStr;
+        }
         todayEarningsSpan.innerText = `$${todayTotal.toFixed(2)}`;
-        if (displayDailyRateSpan) displayDailyRateSpan.innerText = `$${todayTotal.toFixed(2)}`;
+        
+        // 薪金詳情中的「本日薪金」顯示全天預期總額（最大值）
+        const todayExpected = getDailyExpectedEarnings(realCurrentYear, realCurrentMonth, now.getDate(), computedHourlyRate);
+        if (displayDailyRateSpan) displayDailyRateSpan.innerText = `$${todayExpected.toFixed(2)}`;
         
         const totalDays = new Date(realCurrentYear, realCurrentMonth+1, 0).getDate();
         const totalSecInMonth = totalDays * 86400;
@@ -944,6 +1035,7 @@
             currentViewYear = new Date().getFullYear();
             currentViewMonth = new Date().getMonth();
             realTimeEnabled = false;
+            isAmountHidden = false;
             if (updateInterval) clearInterval(updateInterval);
             renderWeekConfigUI();
             monthlySalaryInput.value = 20000;
@@ -1020,16 +1112,18 @@
                     const isToday = (today.getFullYear() === year && today.getMonth() === month && today.getDate() === date);
                     const checkedAttr = working ? 'checked' : '';
                     html += `<td class="${isToday ? 'today-badge' : ''}">
-                                <div><span class="date-num">${date}</span></div>
-                                <div><input type="checkbox" class="work-checkbox" data-year="${year}" data-month="${month}" data-day="${date}" ${checkedAttr} style="transform:scale(1.1);"></div>
-                              </td>`;
+                                <div class="date-cell">
+                                    <span class="date-num">${date}</span>
+                                    <input type="checkbox" class="work-checkbox" data-year="${year}" data-month="${month}" data-day="${date}" ${checkedAttr}>
+                                </div>
+                             </td>`;
                     date++;
                 }
             }
             html += '</tr>';
             if (date > daysInMonth) break;
         }
-        html += '</tbody></tr>';
+        html += '</tbody></table>';
         calendarDiv.innerHTML = html;
         document.querySelectorAll('.work-checkbox').forEach(cb => {
             cb.addEventListener('change', (e) => {
@@ -1207,6 +1301,7 @@
             monthlySalaryInput.value = 20000;
             monthlySalaryHKD = 20000;
             refreshRatesAndTotalHours();
+            isAmountHidden = false;
         }
         
         yearSelect.value = currentViewYear;
@@ -1237,6 +1332,7 @@
         yearSelect.addEventListener('change', updateCalendarFromPicker);
         monthSelect.addEventListener('change', updateCalendarFromPicker);
         if(addUnpaidBtnInline) addUnpaidBtnInline.addEventListener('click', addUnpaidRecord);
+        if(toggleHideAmountBtn) toggleHideAmountBtn.addEventListener('click', toggleAmountVisibility);
         if(unpaidDateInput) {
             const today = new Date();
             const yyyy = today.getFullYear();
